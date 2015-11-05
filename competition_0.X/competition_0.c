@@ -2,12 +2,9 @@
 
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
+#include "shooter.h" //set up pin names, hold all additional functions
+
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
-long startTime;
-int i;
-
-#include "motion_comp.h" //set up pin names, hold all additional functions
-
 
 typedef enum {findLoader, toLoader, loading, toShooting, findTarget, shooting, end} state;	//Initialize all states...
 state STATE = findLoader;	//Default state initialization
@@ -20,9 +17,11 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
     milliseconds++;
 }
 
-void timer1_setup()
-{
-   _TON = 1;	//Turn on timer 1, for general use
+int main()
+{	
+    int i;
+        
+    _TON = 1;	//Turn on timer 1, for general use
 	
     _TCKPS = 0b00;  //Timer pre-scaler set to 1:1, page 139
     _RCDIV = 0b011; //1mHz (with 8mHz), divide by 8
@@ -32,13 +31,6 @@ void timer1_setup()
     _T1IE = 1;      // Enable interrupt
     _T1IF = 0;      // Clear interrupt flag
     PR1 = 500;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz 
-}
-
-int main()
-{	
-
-        
-     
 
 	while(1)
 	{

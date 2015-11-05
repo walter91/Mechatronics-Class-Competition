@@ -19,7 +19,6 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
     <itemPath>competition_0.c</itemPath>
-    <itemPath>motion_comp.h</itemPath>
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
