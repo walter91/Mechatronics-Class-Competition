@@ -2,7 +2,7 @@
 
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
-#include "shooter.h" //set up pin names, hold all additional functions
+#include "board.h" //set up pin names, hold all additional functions
 
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 
@@ -37,7 +37,7 @@ int main()
 		switch(STATE)
 		{
 			case findLoader:
-				if(PIN_IR_SENSOR)	//the IR-LED is found, then turn off motors and set STATE = toLoader
+				if(PIN_IR_F)	//the IR-LED is found, then turn off motors and set STATE = toLoader
 				{
 					STATE = toLoader; //set state
 				}
@@ -49,7 +49,7 @@ int main()
 				break;
 				
 			case toLoader:
-				if(PIN_SWITCH1 && PIN_SWITCH2)	//If reached by both switches, STATE = loading, turn off motors, break
+				if(PIN_SWITCH_L && PIN_SWITCH_R)	//If reached by both switches, STATE = loading, turn off motors, break
 				{
 					STATE = loading; //set state
 				}

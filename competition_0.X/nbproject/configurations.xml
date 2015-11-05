@@ -19,6 +19,7 @@
       <itemPath>Makefile</itemPath>
     </logicalFolder>
     <itemPath>competition_0.c</itemPath>
+    <itemPath>board.h</itemPath>
   </logicalFolder>
   <sourceRootList>
     <Elem>.</Elem>
