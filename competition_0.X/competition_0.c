@@ -6,7 +6,7 @@ _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 
-typedef enum {findLoader, toLoader, loading, toShooting, findTarget, shooting, end} state;	//Initialize all states...
+typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, end} state;	//Initialize all states...
 state STATE = findLoader;	//Default state initialization
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
@@ -36,6 +36,41 @@ int main()
 	{
 		switch(STATE)
 		{
+            case findCenter:
+                
+				
+                /*
+                 Static Stage = 0
+
+                Switch(stage)
+                    Case 0: //Finding normal
+                        If(Find_normal())
+                            Stage = 1;
+                        Else
+                            Do nothing
+                    Case 1: //Finding first 24"
+                        If(Find_24())
+                            Stage = 2;
+                        Else
+                            Do nothing
+                    Case 2://Turn to the other wall, 90 degrees
+                        If(turn(90))
+                            Stage = 3:
+                        Else
+                            Do nothing
+                    Case 3://Finding the second 24
+                        If(Find_24())
+                            Stage = 0;
+                            STATE = findLoader
+                        Else
+                            Do nothing
+
+                    */
+                
+                
+				//An interrupt will turn off the motors if the time expires
+				break;
+            
 			case findLoader:
 				if(PIN_IR_F)	//the IR-LED is found, then turn off motors and set STATE = toLoader
 				{

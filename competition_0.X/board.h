@@ -52,112 +52,142 @@ void toggle(int pinToToggle)
 }
 
 
-
-
 int go_straight_inches(float inches)
-	{
-		#define stepsPerRev 200 //Number of steps required for one rev of motor
-		#define wheelCircumferenceInches 12.76	//Drive wheel circumference in inches
-		static int stepsPerInch = (int)(stepsPerRev/wheelCircumferenceInches);	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
-		static int numberOfSteps;
-        static int stepsTaken = 0;
-        static long lastTime;
-        lastTime = milliseconds;
-        
-        numberOfSteps = (int)(inches*stepsPerInch);	//convert inches to number of steps
-		
-        if(inches >- 0)
+{
+    #define stepsPerRev 200 //Number of steps required for one rev of motor
+    #define wheelCircumferenceInches 12.76	//Drive wheel circumference in inches
+    static int stepsPerInch = (int)(stepsPerRev/wheelCircumferenceInches);	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
+    static int numberOfSteps;
+    static int stepsTaken = 0;
+    static long lastTime;
+    lastTime = milliseconds;
+
+    numberOfSteps = (int)(inches*stepsPerInch);	//convert inches to number of steps
+
+    if(inches >- 0)
+    {
+        PIN_DIR_R = RIGHT_FORWARD;  //set direction pins, both forward
+        PIN_DIR_L = LEFT_FORWARD;  //set direction pins, both forward
+    }
+
+    else
+    {
+        PIN_DIR_R = RIGHT_BACKWARD;  //set direction pins, both forward
+        PIN_DIR_L = LEFT_BACKWARD;  //set direction pins, both forward
+    }
+
+    if(stepsTaken < numberOfSteps)  //Not enough steps yet...
+    {
+        if((milliseconds - lastTime) < STEP_DELAY)  //Not yet waited long enough
         {
-            PIN_DIR_R = RIGHT_FORWARD;  //set direction pins, both forward
-            PIN_DIR_L = LEFT_FORWARD;  //set direction pins, both forward
+            //do nothing YET...
         }
-        
-        else
+        else    //Its time to step...
         {
-            PIN_DIR_R = RIGHT_BACKWARD;  //set direction pins, both forward
-            PIN_DIR_L = LEFT_BACKWARD;  //set direction pins, both forward
-        }
-        
-        if(stepsTaken < numberOfSteps)  //Not enough steps yet...
-        {
-            if((milliseconds - lastTime) < STEP_DELAY)  //Not yet waited long enough
+            toggle(PIN_STEP_R); //Change the value from 1->0 or visa-versa
+            toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
+            if(PIN_STEP_R == 1) //Step pin was toggled HIGH
             {
-                //do nothing YET...
+                stepsTaken++;   //Count steps when pulse goes HIGH
             }
-            else    //Its time to step...
-            {
-                toggle(PIN_STEP_R); //Change the value from 1->0 or visa-versa
-                toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
-                if(PIN_STEP_R == 1) //Step pin was toggled HIGH
-                {
-                    stepsTaken++;   //Count steps when pulse goes HIGH
-                }
-            }
-            return(0);  //Need to continue
         }
-        else    //We've taken enough steps
-        {
-            stepsTaken = 0; //Reset steps taken for next call
-            return(1);  //We're done...
-        }
-	}
-
-
-
-
-
+        return(0);  //Need to continue
+    }
+    else    //We've taken enough steps
+    {
+        stepsTaken = 0; //Reset steps taken for next call
+        return(1);  //We're done...
+    }
+}
 
 
 
 int turn_degrees(int degrees)
-	{
-		static int stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
-		static int numberOfSteps;   //Number of steps to reach the desired degrees
-        numberOfSteps = (int)(degrees * stepsPerDegree);
-        static int stepsTaken = 0;
-        static long lastTime;
-        lastTime = milliseconds;
-        
-        
-        if(degrees >= 0)
+{
+    static int stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
+    static int numberOfSteps;   //Number of steps to reach the desired degrees
+    numberOfSteps = (int)(degrees * stepsPerDegree);
+    static int stepsTaken = 0;
+    static long lastTime;
+    lastTime = milliseconds;
+
+
+    if(degrees >= 0)
+    {
+        PIN_DIR_R = RIGHT_BACKWARD;  //set direction pins
+        PIN_DIR_L = LEFT_FORWARD;  //set direction pins
+    }
+    else
+    {
+        PIN_DIR_R = RIGHT_FORWARD;  //set direction pins
+        PIN_DIR_L = LEFT_BACKWARD;  //set direction pins
+    }
+
+    if(stepsTaken < numberOfSteps)  //Not enough steps yet...
+    {
+        if((milliseconds - lastTime) < STEP_DELAY)  //Not yet waited long enough
         {
-            PIN_DIR_R = RIGHT_BACKWARD;  //set direction pins
-            PIN_DIR_L = LEFT_FORWARD;  //set direction pins
+            //do nothing YET...
         }
-        else
+        else    //Its time to step...
         {
-            PIN_DIR_R = RIGHT_FORWARD;  //set direction pins
-            PIN_DIR_L = LEFT_BACKWARD;  //set direction pins
-        }
-		
-		if(stepsTaken < numberOfSteps)  //Not enough steps yet...
-        {
-            if((milliseconds - lastTime) < STEP_DELAY)  //Not yet waited long enough
+            toggle(PIN_STEP_R); //Change the value from 1->0 or visa-versa
+            toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
+            if(PIN_STEP_R == 1) //Step pin was toggled HIGH
             {
-                //do nothing YET...
+                stepsTaken++;   //Count steps when pulse goes HIGH
             }
-            else    //Its time to step...
-            {
-                toggle(PIN_STEP_R); //Change the value from 1->0 or visa-versa
-                toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
-                if(PIN_STEP_R == 1) //Step pin was toggled HIGH
-                {
-                    stepsTaken++;   //Count steps when pulse goes HIGH
-                }
-            }
-            return(0);  //Need to continue
         }
-        else    //We've taken enough steps
-        {
-            stepsTaken = 0; //Reset steps taken for next call
-            return(1);  //We're done...
-        }
-	}
+        return(0);  //Need to continue
+    }
+    else    //We've taken enough steps
+    {
+        stepsTaken = 0; //Reset steps taken for next call
+        return(1);  //We're done...
+    }
+}
 
 
+int find_normal()
+{
+    /*Dist1 = Measure distance
+Turn 1 degree
+Dist2 = Measure distance
+If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
+	Go the other way?
+	Return(0)
 
+Else if(Dist1 > Dist2)	//Going right direction
+	Continue turning
+	Return(0)
+	Flag = 1
+	
+Else if(Dist2 > Dist1 && Flag==1)	//Reached the minimum
+	Minimum Reached?
+	Go back half a step in angle
+	Return(1)
+	Flag = 0
+*/
+}
 
+int find_24()
+{
+    /*
+     Error = (24 - Dist)
 
+If (abs(error) < .1")
+	Were there
+	Return(1)
+Else
+	If(error > 0)
+		Drive backwards
+		Return(0)
+	Else
+		Drive forward
+		Return(0)
+
+     */
+}
 
 
 
