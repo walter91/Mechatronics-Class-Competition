@@ -150,24 +150,54 @@ int turn_degrees(int degrees)
 
 int find_normal()
 {
-    /*Dist1 = Measure distance
-Turn 1 degree
-Dist2 = Measure distance
-If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
-	Go the other way?
-	Return(0)
-
-Else if(Dist1 > Dist2)	//Going right direction
-	Continue turning
-	Return(0)
-	Flag = 1
+	static int statFlag = 0;
+	static int dirFlag = 0;
+	static float dist1 = read_dist();	//Dist1 = Measure distance
+	//TODO: Write read_dist() function. Should return float value of filtered distance measurements...
+	if(dirFlag ==0)
+	{
+		turn_degrees(1);	//Turn 1 degree
+	}
+	else
+	{
+		turn_degrees(-1);
+	}
+	static float dist2;	//Dist2 = Measure distance
+	dist2 = read_dist();
 	
-Else if(Dist2 > Dist1 && Flag==1)	//Reached the minimum
-	Minimum Reached?
-	Go back half a step in angle
-	Return(1)
-	Flag = 0
-*/
+	if((dist2 > dist1) && (statFlag == 0))	//If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
+	{
+		if(dirFlag == 1)	//	Go the other way?
+		{
+			dirFlag = 0;
+		}
+		else
+		{
+			dirFlag = 1;
+		}
+		
+		return(0);	//keep searching
+	}		
+	else if(dist1 > dist2)	//Going right direction
+	{
+		//	Continue turning in that direction
+		statFlag = 0;		//	Flag = 1
+		return(0);	// keep searching
+	}
+	else if((dist2 > dist1) && (statFlag == 1))		//Else if(Dist2 > Dist1 && Flag==1)	//Reached the minimum
+	{
+		if(dirFlag == 0)
+		{
+			turn_degrees(-.5);	//	Go back half a step in angle
+		}
+		else
+		{
+			turn_degrees(.5);	//	Go back half a step in angle
+		}
+		
+		return(1);	//	Return(1)
+		statFlag = 0;	//	Flag = 0
+	}
 }
 
 int find_24()
