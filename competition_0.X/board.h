@@ -13,7 +13,7 @@
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
-
+//Pin Definitions
 #define PIN_STEP_R _RB0 //4
 #define PIN_STEP_L _RB1 //5
 
@@ -30,7 +30,7 @@
 #define PIN_SWITCH_L _RB14  //17
 
 
-
+//Values
 #define LEFT_FORWARD 0
 #define RIGHT_FORWARD 1
 
@@ -38,6 +38,9 @@
 #define RIGHT_BACKWARD 0
 
 #define STEP_DELAY 10
+
+#define INCH_TO_WALL 24.0
+#define DIST_TOL 0.1
 
 void toggle(int pinToToggle)
 {
@@ -200,23 +203,49 @@ int find_normal()
 	}
 }
 
+float abs_f(float value)
+{
+	if(value >= 0)
+		return(value);
+	else
+		return(-1.0*value);
+}
+
+int abs_i(int value)
+{
+	if(value >= 0)
+		return(value);
+	else
+		return(-1*value);
+}
+
+
+
 int find_24()
 {
-    /*
-     Error = (24 - Dist)
-
-If (abs(error) < .1")
-	Were there
-	Return(1)
-Else
-	If(error > 0)
-		Drive backwards
-		Return(0)
-	Else
-		Drive forward
-		Return(0)
-
-     */
+	static float error;
+		
+	error = (INCH_TO_WALL -  distance_measured());	//Error = (24 - Dist)
+	//TODO: write a distance_measured() function. This should return a float which is a filtered value representing the distance from the wall
+		
+	if(abs_f(error) < DIST_TOL)	//We are there...
+	{
+		return(1)	//Center Found
+	}
+	
+	else	//Change position...
+	{
+		if(error > 0)	//Positive error, move backward
+		{
+			go_straight_inches(-.5);
+		}
+		else	//Negative error, move forward
+		{
+			go_straight_inches(.5);
+		}
+		
+		return(0);	//Keep looking for center
+	}
 }
 
 
