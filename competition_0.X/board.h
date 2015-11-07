@@ -40,6 +40,7 @@
 #define STEP_DELAY 10
 
 #define INCH_TO_WALL 24.0
+#define INCH_FROM_ULTRA_TO_CENTER 4.5
 #define DIST_TOL 0.1
 
 void toggle(int pinToToggle)
@@ -102,7 +103,6 @@ int go_straight_inches(float inches)
         return(1);  //We're done...
     }
 }
-
 
 
 int turn_degrees(int degrees)
@@ -203,6 +203,7 @@ int find_normal()
 	}
 }
 
+
 float abs_f(float value)
 {
 	if(value >= 0)
@@ -210,6 +211,7 @@ float abs_f(float value)
 	else
 		return(-1.0*value);
 }
+
 
 int abs_i(int value)
 {
@@ -220,13 +222,12 @@ int abs_i(int value)
 }
 
 
-
 int find_24()
 {
 	static float error;
 		
-	error = (INCH_TO_WALL -  distance_measured());	//Error = (24 - Dist)
-	//TODO: write a distance_measured() function. This should return a float which is a filtered value representing the distance from the wall
+	error = (INCH_TO_WALL -  read_dist());	//Error = (24 - Dist)
+	//TODO: write a read_dist() function. This should return a float which is a filtered value representing the distance from the wall
 		
 	if(abs_f(error) < DIST_TOL)	//We are there...
 	{
@@ -246,6 +247,110 @@ int find_24()
 		
 		return(0);	//Keep looking for center
 	}
+}
+
+
+void ultrasonic_setup()
+{
+	// Configure CN interrupt on Pin2 and Pin3
+    _CN6IE = 1;     // Enable CN on pin 6 (CNEN1 register)
+    _CN6PUE = 0;    // Disable pull-up resistor (CNPU1 register)
+    _CN30IE = 1;     // Enable CN on pin 7 (CNEN1 register)
+    _CN30PUE = 0;    // Disable pull-up resistor (CNPU1 register)
+    _CNIP = 4;      // Set CN interrupt priority (IPC4 register)
+    _CNIF = 0;      // Clear interrupt flag (IFS1 register)
+    _CNIE = 1;      // Enable CN interrupts (IEC1 register)
+	
+	statusDistF = PIN_DIST_F;
+	statusDistB = PIN_DIST_B;
+	
+	#define INCH_PER_MIRCOSECONDS
+	
+	for(i = 0; i <= ULTRASONIC_VALUES; i++)
+	{
+		ultrasonicValuesB[i] = 2000;	//Start with an array of 2 milliseconds times
+		ultrasonicValuesF[i] = 2000;	//Start with an array of 2 milliseconds times
+	}
+	
+}
+
+
+void _ISR _CNInterrupt(void)    //Encoder Reading Code...
+{
+    _CNIF = 0;      // Clear interrupt flag (IFS1 register)
+	
+	timeTemp = microseconds;
+	
+	if(PIN_DIST_B != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
+	{
+		if(PIN_DIST_B)	//Rear Ultrasonic Pulse Just Started
+		{
+			startTimeUltraB = timeTemp;
+		}
+		else	//Rear Ultrasonic Pulse Just Ended
+		{
+			
+			for(i = 0; i < ULTRASONIC_VALUES; i++)
+			{
+				ultrasonicValuesB[i] = ultrasonicValuesB[i+1];	//Replace current value with next value...
+			}
+			ultrasonicValuesB[ULTRASONIC_VALUES] = (timeTemp - startTimeUltraB);
+		}
+		ultraLastStateB = PIN_DIST_B;
+	}
+	
+	else if(PIN_DIST_F != ultraLastStateF)	//The Front Ultrasonic Pulse Train Just Changed
+	{
+		if(PIN_DIST_F)	//Front Ultrasonic Pulse Just Started
+		{
+			startTimeUltraF = timeTemp;
+		}
+		else	//Front Ultrasonic Pulse Just Ended
+		{
+			
+			for(i = 0; i < ULTRASONIC_VALUES; i++)
+			{
+				ultrasonicValuesF[i] = ultrasonicValuesF[i+1];	//Replace current value with next value...
+			}
+			ultrasonicValuesF[ULTRASONIC_VALUES] = (timeTemp - startTimeUltraF);
+		}
+		ultraLastStateF = PIN_DIST_F;
+	}
+}
+
+
+float read_dist()
+{
+	static unsigned long averageMicrosF;
+	static unsigned long averageMicrosB;
+	static unsigned long oldAverageMicrosF;
+	static unsigned long oldAverageMicrosB;
+	static float distance;
+	
+	static unsigned long sumMicrosF;
+	static unsigned long sumMicrosB;
+	
+	sumMicrosF = 0;
+	sumMicrosB = 0;
+	
+	for(i = 0; i <= ULTRASONIC_VALUES; i++)
+	{
+		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
+		sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
+	}
+	
+	sumMicrosF = sumMicrosF + oldAverageMicrosF;
+	sumMicrosB = sumMicrosB + oldAverageMicrosB;
+	
+	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
+	averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
+	
+	oldAverageMicrosF = averageMicrosF;
+	oldAverageMicrosB = averageMicrosB;
+	
+	distance = (( 48.0 - ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) - INCH_FROM_ULTRA_TO_CENTER ) + ( ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) + INCH_FROM_ULTRA_TO_CENTER ))/2.0;
+	
+	return(distance);
 }
 
 

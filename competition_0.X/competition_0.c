@@ -2,9 +2,30 @@
 
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
-#include "board.h" //set up pin names, hold all additional functions
-
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
+unsigned long microseconds = 0;	//Will overflow after 71 minutes
+unsigned long countTimer = 0;
+//unsigned long countTimerMilli = 0; 
+
+unsigned long startTimeUltraF;
+unsigned long startTimeUltraB;
+
+unsigned long stopTimeUltraF;
+unsigned long stopTimeUltraB;
+
+unsigned long timeTemp;
+
+int ultraLastStateB;
+int ultraLastStateF;
+
+#define ULTRASONIC_VALUES 10
+
+unsigned long ultrasonicValuesB[ULTRASONIC_VALUES];
+unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
+
+int i;
+
+#include "board.h" //set up pin names, hold all additional functions
 
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, end} state;	//Initialize all states...
 state STATE = findLoader;	//Default state initialization
@@ -14,14 +35,21 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
     // Remember to clear the Timer1 interrupt flag when this ISR is entered.
     _T1IF = 0; // Clear interrupt flag
     
-    milliseconds++;
+	microseconds = microseconds + 100;
+	
+	countTimer++;
+	
+	if(countTimer >= 10)
+    {
+		milliseconds++;
+		countTimer = 0;
+	}
 }
 
-int main()
-{	
-    int i;
-        
-    _TON = 1;	//Turn on timer 1, for general use
+
+void timing_interrupt_config()
+(
+	_TON = 1;	//Turn on timer 1, for general use
 	
     _TCKPS = 0b00;  //Timer pre-scaler set to 1:1, page 139
     _RCDIV = 0b011; //1mHz (with 8mHz), divide by 8
@@ -30,7 +58,15 @@ int main()
     _T1IP = 5;      // Select interrupt priority
     _T1IE = 1;      // Enable interrupt
     _T1IF = 0;      // Clear interrupt flag
-    PR1 = 500;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz 
+    PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
+)
+
+int main()
+{	
+    
+    
+	timing_interrupt_config();
+	ultrasonic_setup();
 
 	while(1)
 	{
