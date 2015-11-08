@@ -14,9 +14,17 @@ unsigned long stopTimeUltraF;
 unsigned long stopTimeUltraB;
 
 unsigned long timeTemp;
+unsigned long timeTempMillis;
 
 int ultraLastStateB;
 int ultraLastStateF;
+
+int loaderIrState;
+#define IR_TIMES 5
+unsigned long irTimeValues[IR_TIMES];
+
+
+
 
 #define ULTRASONIC_VALUES 10
 
@@ -48,7 +56,7 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 
 
 void timing_interrupt_config()
-(
+{
 	_TON = 1;	//Turn on timer 1, for general use
 	
     _TCKPS = 0b00;  //Timer pre-scaler set to 1:1, page 139
@@ -59,7 +67,7 @@ void timing_interrupt_config()
     _T1IE = 1;      // Enable interrupt
     _T1IF = 0;      // Clear interrupt flag
     PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
-)
+}
 
 int main()
 {	

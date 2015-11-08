@@ -231,7 +231,7 @@ int find_24()
 		
 	if(abs_f(error) < DIST_TOL)	//We are there...
 	{
-		return(1)	//Center Found
+		return(1);	//Center Found
 	}
 	
 	else	//Change position...
@@ -261,8 +261,8 @@ void ultrasonic_setup()
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
     _CNIE = 1;      // Enable CN interrupts (IEC1 register)
 	
-	statusDistF = PIN_DIST_F;
-	statusDistB = PIN_DIST_B;
+	ultraLastStateF = PIN_DIST_F;
+	ultraLastStateB = PIN_DIST_B;
 	
 	#define INCH_PER_MIRCOSECONDS
 	
@@ -270,9 +270,41 @@ void ultrasonic_setup()
 	{
 		ultrasonicValuesB[i] = 2000;	//Start with an array of 2 milliseconds times
 		ultrasonicValuesF[i] = 2000;	//Start with an array of 2 milliseconds times
-	}
-	
+	}	
 }
+
+
+
+void loader_finder_digital_setup()
+{
+    //TODO: Add all configurations needed to change pin to digital input...
+    //      as well as anything else to make the switch between analog and digital
+    
+	// Configure CN interrupt on Pin2 and Pin3
+    _CN3IE = 1;     // Enable CN on pin 6 (CNEN1 register)
+    _CN3PUE = 0;    // Disable pull-up resistor (CNPU1 register)
+    _CNIP = 4;      // Set CN interrupt priority (IPC4 register)
+    _CNIF = 0;      // Clear interrupt flag (IFS1 register)
+    _CNIE = 1;      // Enable CN interrupts (IEC1 register)
+	
+	loaderIrState = PIN_IR_B;
+	
+	for(i = 0; i <= IR_TIMES; i++)
+	{
+		irTimeValues[i] = 0;	//Start with an array of 2 milliseconds times
+	}	
+}
+
+void loader_finder_analog_setup()
+{
+    //TODO: All configurations needed to switch between digital interrupt to
+    //      analog input
+}
+
+
+
+
+
 
 
 void _ISR _CNInterrupt(void)    //Encoder Reading Code...
@@ -280,27 +312,41 @@ void _ISR _CNInterrupt(void)    //Encoder Reading Code...
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
 	
 	timeTemp = microseconds;
+    timeTempMillis = milliseconds;
 	
-	if(PIN_DIST_B != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
+    if(PIN_IR_B != loaderIrState) //Rear (towards the Loader) state has changed
+    {
+        loaderIrState = PIN_IR_B;
+        
+        for(i = 0; i < IR_TIMES; i++)
+			{
+				irTimeValues[i] = irTimeValues[i+1];	//Replace current value with next value...
+			}
+		irTimeValues[IR_TIMES] = (timeTempMillis);
+    }
+        
+	else if(PIN_DIST_B != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
 	{
+        ultraLastStateB = PIN_DIST_B;
+        
 		if(PIN_DIST_B)	//Rear Ultrasonic Pulse Just Started
 		{
 			startTimeUltraB = timeTemp;
 		}
 		else	//Rear Ultrasonic Pulse Just Ended
 		{
-			
 			for(i = 0; i < ULTRASONIC_VALUES; i++)
 			{
 				ultrasonicValuesB[i] = ultrasonicValuesB[i+1];	//Replace current value with next value...
 			}
 			ultrasonicValuesB[ULTRASONIC_VALUES] = (timeTemp - startTimeUltraB);
 		}
-		ultraLastStateB = PIN_DIST_B;
 	}
 	
 	else if(PIN_DIST_F != ultraLastStateF)	//The Front Ultrasonic Pulse Train Just Changed
 	{
+        ultraLastStateF = PIN_DIST_F;
+        
 		if(PIN_DIST_F)	//Front Ultrasonic Pulse Just Started
 		{
 			startTimeUltraF = timeTemp;
@@ -314,7 +360,6 @@ void _ISR _CNInterrupt(void)    //Encoder Reading Code...
 			}
 			ultrasonicValuesF[ULTRASONIC_VALUES] = (timeTemp - startTimeUltraF);
 		}
-		ultraLastStateF = PIN_DIST_F;
 	}
 }
 
