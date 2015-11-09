@@ -288,12 +288,9 @@ void ultrasonic_setup()
     OC2CON2bits.SYNCSEL = 0b01100;    // Use Timer2, pg. 160
 
     // Set period and duty cycle
-    PR2 = 25000;                // Period of Timer2 to achieve FPWM = 1 kHz
+    PR2 = 25000;            // Period of Timer2 = 50ms
                             // See Equation 15-1 in the data sheet
-    OC2R = 5;               // Set Output Compare value to achieve desired duty
-                            // cycle. This is the number of timer counts when
-                            // the OC should send the PWM signal low. The duty
-                            // cycle as a fraction is OC1R/PR2.
+    OC2R = 5;               // On time of 10us
 
     // Turn on Timer2
     T2CONbits.TON = 1;
@@ -308,25 +305,22 @@ void ultrasonic_setup()
 	// CONFIGURE PWM3 (on pin 5) USING TIMER2
     // Configure Timer2, which will be the source for the output compare that
     // drives Ultrasonic_Front
-    T2CONbits.TON = 0;      // Timer2 off while configuring PWM, pg. 144
-    T2CONbits.TCKPS = 0b00;    // Timer2 1:1 clock pre-scale, pg. 144
-    T2CONbits.T32 = 0;      // Timer2 acts as a single 16-bit timer, pg. 144
-    T2CONbits.TCS = 0;      // Timer2 internal clock source, pg. 144
+    T2CONbits.TON = 0;      	// Timer2 off while configuring PWM, pg. 144
+    T2CONbits.TCKPS = 0b00;    	// Timer2 1:1 clock pre-scale, pg. 144
+    T2CONbits.T32 = 0;      	// Timer2 acts as a single 16-bit timer, pg. 144
+    T2CONbits.TCS = 0;      	// Timer2 internal clock source, pg. 144
 
     // Configure PWM1 on OC1 (pin 14)
-    OC3CON1 = 0b0000;               // Clear OC3 configuration bits, Table 4-8
-    OC3CON2 = 0b0000;               // Clear OC3 configuration bits, Table 4-8
-    OC3CON1bits.OCTSEL = 0b000;       // Use Timer2, pg. 157
-    OC3CON1bits.OCM = 0b110;          // Edge-aligned PWM mode, pg. 158
-    OC3CON2bits.SYNCSEL = 0b01100;    // Use Timer2, pg. 160
+    OC3CON1 = 0b0000;               	// Clear OC3 configuration bits, Table 4-8
+    OC3CON2 = 0b0000;               	// Clear OC3 configuration bits, Table 4-8
+    OC3CON1bits.OCTSEL = 0b000;       	// Use Timer2, pg. 157
+    OC3CON1bits.OCM = 0b110;          	// Edge-aligned PWM mode, pg. 158
+    OC3CON2bits.SYNCSEL = 0b01100;    	// Use Timer2, pg. 160
 
     // Set period and duty cycle
-    PR2 = 25000;                // Period of Timer2 to achieve FPWM = 1 kHz
+    PR3 = 25000;         	// Period of Timer3 = 50ms
                             // See Equation 15-1 in the data sheet
-    OC2R = 5;               // Set Output Compare value to achieve desired duty
-                            // cycle. This is the number of timer counts when
-                            // the OC should send the PWM signal low. The duty
-                            // cycle as a fraction is OC1R/PR2.
+    OC3R = 5;               // On time of 10us
 
     // Turn on Timer2
     T2CONbits.TON = 1;
