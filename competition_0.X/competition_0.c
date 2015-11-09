@@ -104,7 +104,7 @@ int main()
 					case 1:
 						if(find_24())
 						{
-							state = 2;
+							findCenterState = 2;
 						}
 						else
 						{
