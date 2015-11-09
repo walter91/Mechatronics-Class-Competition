@@ -32,7 +32,7 @@ unsigned long ultrasonicValuesB[ULTRASONIC_VALUES];
 unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
 
 int i;
-
+unsigned long startTime;
 #include "board.h" //set up pin names, hold all additional functions
 
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, end} state;	//Initialize all states...
