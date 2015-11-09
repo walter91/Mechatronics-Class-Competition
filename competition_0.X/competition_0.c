@@ -75,67 +75,109 @@ int main()
     
 	timing_interrupt_config();
 	ultrasonic_setup();
+	
+	int findCenterState = 0;
+	int findLoaderState = 0;
+	int toLoaderState = 0;
+	int loadingState = 0;
+	int toShootingState = 0;
+	int findTargetState = 0;
+	int shottingState = 0;
 
 	while(1)
 	{
 		switch(STATE)
 		{
             case findCenter:
-                
-				
-                /*
-                 Static Stage = 0
-
-                Switch(stage)
-                    Case 0: //Finding normal
-                        If(Find_normal())
-                            Stage = 1;
-                        Else
-                            Do nothing
-                    Case 1: //Finding first 24"
-                        If(Find_24())
-                            Stage = 2;
-                        Else
-                            Do nothing
-                    Case 2://Turn to the other wall, 90 degrees
-                        If(turn(90))
-                            Stage = 3:
-                        Else
-                            Do nothing
-                    Case 3://Finding the second 24
-                        If(Find_24())
-                            Stage = 0;
-                            STATE = findLoader
-                        Else
-                            Do nothing
-
-                    */
-                
-                
-				//An interrupt will turn off the motors if the time expires
+				switch(findCenterState)
+				{
+					case 0:
+						if(find_normal())
+						{
+							findCenterState = 1;
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+					case 1:
+						if(find_24())
+						{
+							state = 2;
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+					case 2:
+						if(turn_degrees(90))
+						{
+							findCenterState = 3;
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+					case 3:
+						if(find_24())
+						{
+							findCenterState = 0;
+							STATE = findLoader;
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+				}
 				break;
             
 			case findLoader:
-				if(PIN_IR_F)	//the IR-LED is found, then turn off motors and set STATE = toLoader
+				switch(findLoaderState)
 				{
-					STATE = toLoader; //set state
+					case 0:	//Default, turn 45 degrees...
+						if(turn_degrees(45))
+						{
+							findLoaderState = 1;
+							startTime = milliseconds;
+							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0);	//Pause and allow for the IR sensor to adjust
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+					case 1:	//Turn completed...
+						if((milliseconds - irTimeValues[0]) < ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)	//The array of 5 values has been filled recently by interrupts (IR Beacon Found)
+						{
+							findLoaderState = 0;
+							STATE = toLoader;
+						}
+						else
+						{
+							findLoaderState = 2;
+						}
+						break;
+					case 2: //IR Not found, continue turning...
+						if(turn_degrees(90))
+						{
+							findLoaderState = 1;
+							startTime = milliseconds;
+							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0);	//Pause and allow for the IR sensor to adjust
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
 				}
-				else //continue to look for the IR-LED
-				{
-					turn_degrees(10);	//Spin around by turning on one motor forward and another motor backwards (10 is an arbitrary number)
-				}
-				//An interrupt will turn off the motors if the time expires
 				break;
 				
 			case toLoader:
-				if(PIN_SWITCH_L && PIN_SWITCH_R)	//If reached by both switches, STATE = loading, turn off motors, break
-				{
-					STATE = loading; //set state
-				}
-				else	//Else, drive both motors
-				{
-					go_straight_inches(.25); //Just an arbitrarily small amount for now, this can be refined...
-				}
+				
 				break;
 				
 			case loading:

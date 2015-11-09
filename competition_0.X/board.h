@@ -344,7 +344,7 @@ void loader_finder_digital_setup()
 	
 	for(i = 0; i <= IR_TIMES; i++)
 	{
-		irTimeValues[i] = 0;	//Start with an array of 2 milliseconds times
+		irTimeValues[i] = 0;	//Start with a blank array
 	}	
 }
 
