@@ -43,6 +43,8 @@
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
 #define DIST_TOL 0.1
 
+#define LOADING_IR_FREQ
+
 void toggle(int pinToToggle)
 {
     if(pinToToggle)
