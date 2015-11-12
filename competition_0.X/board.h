@@ -47,6 +47,48 @@
 
 #define INCHES_CORNER_TO_CENTER 33.3
 
+#define IR_FOUND_THRESH 70  //Percent of full voltage
+
+float ir_front_percent()
+{
+    //return values betwee 0-100 for percent of IR seen
+    return(-0.0298*ADC1BUF0 + 122.1);
+}
+
+
+float ir_back_percent()
+{
+    //return values betwee 0-100 for percent of IR seen
+    return(-0.0298*ADC1BUF1 + 122.1);
+}
+
+
+int ir_front_found()
+{
+    if((-0.0298*ADC1BUF0 + 122.1) >= IR_FOUND_THRESH)
+    {
+        return(1);
+    }
+    else
+    {
+        return(0);
+    }
+}
+
+
+int ir_back_found()
+{
+    if((-0.0298*ADC1BUF1 + 122.1) >= IR_FOUND_THRESH)
+    {
+        return(1);
+    }
+    else
+    {
+        return(0);
+    }
+}
+
+
 void toggle(int pinToToggle)
 {
     if(pinToToggle)

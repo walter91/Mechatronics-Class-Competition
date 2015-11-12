@@ -19,6 +19,8 @@ unsigned long timeTempMillis;
 int ultraLastStateB;
 int ultraLastStateF;
 
+int targetsFound = 0b000;
+
 int loaderIrState;
 #define IR_TIMES 5
 unsigned long irTimeValues[IR_TIMES];
@@ -75,7 +77,7 @@ int main()
     
 	timing_interrupt_config();
 	ultrasonic_setup();
-	
+    
 	int findCenterState = 0;
 	int findLoaderState = 0;
 	int toLoaderState = 0;
@@ -205,9 +207,49 @@ int main()
 				break;
 				
 			case findTarget:
-				//Spin around by turning on one motor forward and another motor backwards
-				//Check for the IR-LED signature
-				//If the IR-LED is found, then turn off motors, STATE = shooting
+				switch(findTargetState)
+				{
+					case 0: //Just starting
+						if(ir_front_found())    //straight ahead is the target
+                        {
+                            STATE = shooting;
+                            targetsFound = targetsFound|0b010;
+                            findTargetState = 0;
+                        }
+                        else    //Not ahead
+                        {
+                            findTargetState = 1;
+                        }
+						break;
+                    case 1:
+                        if(turn_degrees(90))
+                        {
+                            findTargetState = 2;
+                        }
+                        else
+                        {
+                            //do nothing
+                        }
+                        break;
+                    case 2:
+                        if(ir_front_found())    //It was the right one, start shooting
+                        {
+                            STATE = shooting;
+                            targetsFound = targetsFound|0b001;
+                            findTargetState = 0;
+                        }
+                        else if(ir_back_found())    //Turned the wrong way...
+                        {
+                            findTargetState = 3;
+                            targetsFound = targetsFound|0b100;
+                        }
+                    case 3:
+                        if(turn_degrees(180))
+                        {
+                            STATE = shooting;
+                            findTargetState = 0;
+                        }
+				}
 				break;
 				
 			case shooting:
@@ -216,6 +258,8 @@ int main()
 				//count number of shoot() calls
 				
 				//STATE = findLoader
+                
+                    STATE = toLoader;
 				break;
 				
 			case end:
