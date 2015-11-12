@@ -391,7 +391,11 @@ void loader_finder_digital_setup()
 	for(i = 0; i <= IR_TIMES; i++)
 	{
 		irTimeValues[i] = 0;	//Start with a blank array
-	}	
+	}
+    
+    ANSA = 0;       //Turn off analog for port A
+    _TRISA0 = 1;    //Pin2 as Input
+    _TRISA1 = 1;    //Pin3 as Input
 }
 
 
@@ -400,7 +404,8 @@ void ir_finder_analog_setup()
     //TODO: All configurations needed to switch between digital interrupt to
     //      analog input
     
-
+    _CN3IE = 0;     // Disable CN on pin 6 (CNEN1 register)
+    
     //------------------------------------------------------------------------
     // A /D Configuration Function
     //
@@ -537,15 +542,6 @@ float read_dist()
 	
 	return(distance);
 }
-
-
-
-
-
-
-
-
-
 
 
 
