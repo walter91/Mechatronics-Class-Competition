@@ -45,6 +45,8 @@
 
 #define LOADING_IR_FREQ
 
+#define INCHES_CORNER_TO_CENTER 33.3
+
 void toggle(int pinToToggle)
 {
     if(pinToToggle)
@@ -355,6 +357,7 @@ void loader_finder_analog_setup()
 {
     //TODO: All configurations needed to switch between digital interrupt to
     //      analog input
+	
 }
 
 
@@ -448,6 +451,15 @@ float read_dist()
 	
 	return(distance);
 }
+
+
+
+
+
+
+
+
+
 
 
 

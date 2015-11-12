@@ -177,21 +177,31 @@ int main()
 				break;
 				
 			case toLoader:
-				
+				switch(toLoaderState)
+				{
+					case 0:
+						if(go_straight_inches(-1*INCHES_CORNER_TO_CENTER))
+							STATE = loading;
+						break;
+				}
 				break;
 				
 			case loading:
 				//this still needs to have the details worked out...
 				//If loaded with 6, STATE = toShooting, Break
 				//Else, do nothing (wait for loading)
+				
+				STATE = toShooting;
 				break;
 				
 			case toShooting:
-				//call a function go_to_shooting()
-				//Function should drive to center of arena
-				//This can be done with no feedback if stepper motors are used
-				
-				//STATE = findTarget
+				switch(toShootingState)
+				{
+					case 0:
+						if(go_straight_inches(INCHES_CORNER_TO_CENTER))
+							STATE = findTarget;
+						break;
+				}
 				break;
 				
 			case findTarget:
