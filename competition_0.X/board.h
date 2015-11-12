@@ -353,11 +353,55 @@ void loader_finder_digital_setup()
 }
 
 
-void loader_finder_analog_setup()
+void ir_finder_analog_setup()
 {
     //TODO: All configurations needed to switch between digital interrupt to
     //      analog input
-	
+    
+
+    //------------------------------------------------------------------------
+    // A /D Configuration Function
+    //
+    // This function configures the A/D to read from two channels in auto
+    // conversion mode.
+    //------------------------------------------------------------------------
+    
+    // AD1CHS register
+    _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+
+    // AD1CON1 register
+    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode?
+    _MODE12 = 1;        // AD1CON1<10> -- 12-bit or 10-bit?
+    _FORM = 0b00;       // AD1CON1<9:8> -- Output format, pg. 211
+    _SSRC = 0b0111;     // AD1CON1<7:4> -- Auto conversion (internal counter)
+    _ASAM = 1;          // AD1CON1<2> -- Auto sampling
+
+    // AD1CSSL registers
+    AD1CSSL = 0b0000000000000011;   // AD1CSSL<15:0> -- Select lower channels to scan, turn on AN0 and AN1
+    AD1CSSH = 0x0000;               // AD1CSSH<15:0> -- Select upper channels to scan, NOT USED!
+
+    // AD1CON2 register, see pg. 212
+    _PVCFG = 0b00;      // AD1CON2<15:14> -- Use VDD as positive ref voltage
+    _NVCFG = 0;         // AD1CON2<13> -- Use VSS as negative ref voltage
+    _BUFREGEN = 1;      // AD1CON2<11> -- Results stored using channel indexed
+                        // mode -- AN1 result is stored in ADC1BUF1, AN2 result
+                        // is stored in ADC1BUF2, etc.
+    _CSCNA = 1;         // AD1CON2<10> -- Scans inputs specified in AD1CSSx
+                        // registers instead of using channels specified
+                        // by CH0SA bits in AD1CHS register
+    _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
+    _SMPI = 0b00001;    // AD1CON2<6:2> -- Interrupts at the conversion for
+                        // every other sample
+
+    // AD1CON3 register
+    _ADRC = 0;              // AD1CON3<15> -- Use system clock
+    _SAMC = 0x00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0x00111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+
+    ANSA = 1;       //Turn on analog for port A
+    _TRISA0 = 1;    //Pin2 as Input
+    _TRISA1 = 1;    //Pin3 as Input
 }
 
 
