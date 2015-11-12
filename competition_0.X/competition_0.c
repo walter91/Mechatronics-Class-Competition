@@ -94,27 +94,27 @@ int main()
 				switch(findCenterState)
 				{
 					case 0:
-						if(find_normal())
+						if(find_normal())   //First normal found
 						{
 							findCenterState = 1;
 						}
-						else
+						else    //Keep looking
 						{
 							//do nothing
 						}
 						break;
 					case 1:
-						if(find_24())
+						if(find_24())   //First 24" found
 						{
 							findCenterState = 2;
 						}
-						else
+						else    //Keep looking
 						{
 							//do nothing
 						}
 						break;
 					case 2:
-						if(turn_degrees(90))
+						if(turn_degrees(90))    //Turned 90 degrees
 						{
 							findCenterState = 3;
 						}
@@ -124,7 +124,7 @@ int main()
 						}
 						break;
 					case 3:
-						if(find_24())
+						if(find_24())   //Second 24" found
 						{
 							findCenterState = 0;
 							STATE = findLoader;
