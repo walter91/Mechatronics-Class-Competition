@@ -155,7 +155,7 @@ int main()
 					case 1:	//Turn completed...
 						if((milliseconds - irTimeValues[0]) < ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)	//The array of 5 values has been filled recently by interrupts (IR Beacon Found)
 						{
-							findLoaderState = 0;
+							findLoaderState = 0; // Is this line necessary? - David
 							STATE = toLoader;
 						}
 						else
@@ -178,11 +178,11 @@ int main()
 				}
 				break;
 				
-			case toLoader:
+			case toLoader: 								// At this point, is it already pointing backwards to the loader? - David
 				switch(toLoaderState)
 				{
 					case 0:
-						if(go_straight_inches(-1*INCHES_CORNER_TO_CENTER))
+						if(go_straight_inches(-1*INCHES_CORNER_TO_CENTER)) 			// Are we going to use control here? E.i. re-center on IR - David
 							STATE = loading;
 						break;
 				}
@@ -200,7 +200,7 @@ int main()
 				switch(toShootingState)
 				{
 					case 0:
-						if(go_straight_inches(INCHES_CORNER_TO_CENTER))
+						if(go_straight_inches(INCHES_CORNER_TO_CENTER))				// Same as toLoader--are we going to use control? - David
 							STATE = findTarget;
 						break;
 				}
@@ -253,6 +253,7 @@ int main()
 				break;
 				
 			case shooting:
+				//check milliseconds
 				//call shoot() function 6 times
 				//function should handle all coordination of solenoids
 				//count number of shoot() calls
@@ -273,5 +274,3 @@ int main()
 	}
     return(0);
 }
-
-// Test - David
