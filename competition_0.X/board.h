@@ -42,12 +42,16 @@
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
 #define DIST_TOL 0.1
+#define STANDARD_STEP_LENGTH .09
+#define STANDARD_STEP_ANGLE .05
 
 #define LOADING_IR_FREQ
 
 #define INCHES_CORNER_TO_CENTER 33.3
 
 #define IR_FOUND_THRESH 70  //Percent of full voltage
+
+
 
 float ir_front_percent()
 {
@@ -138,7 +142,7 @@ int go_straight_inches(float inches)
             toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
             if(PIN_STEP_R == 1) //Step pin was toggled HIGH
             {
-                stepsTaken++;   //Count steps when pulse goes HIGH --Will this block? Does it matter if it blocks here? - David
+                stepsTaken++;   //Count steps when pulse goes HIGH
             }
         }
         return(0);  //Need to continue
@@ -237,11 +241,11 @@ int find_normal()
 	{
 		if(dirFlag == 0)
 		{
-			turn_degrees(-.5);	//	Go back half a step in angle
+			turn_degrees(-1*STANDARD_STEP_ANGLE);	//	Go back half a step in angle
 		}
 		else
 		{
-			turn_degrees(.5);	//	Go back half a step in angle
+			turn_degrees(STANDARD_STEP_ANGLE);	//	Go back half a step in angle
 		}
 		
 		return(1);	//	Return(1)
@@ -284,11 +288,11 @@ int find_24()
 	{
 		if(error > 0)	//Positive error, move backward
 		{
-			go_straight_inches(-.5); // If our DIST_TOL is 0.1 in, how can we reach it taking 0.5 in steps? Reduce to 0.1 in, maybe? - David
+			go_straight_inches(-1*STANDARD_STEP_LENGTH); // If our DIST_TOL is 0.1 in, how can we reach it taking 0.5 in steps? Reduce to 0.1 in, maybe? - David
 		}
 		else	//Negative error, move forward
 		{
-			go_straight_inches(.5);
+			go_straight_inches(STANDARD_STEP_LENGTH);
 		}
 		
 		return(0);	//Keep looking for center
@@ -326,7 +330,7 @@ void ultrasonic_setup()
     T2CONbits.T32 = 0;      // Timer2 acts as a single 16-bit timer, pg. 144
     T2CONbits.TCS = 0;      // Timer2 internal clock source, pg. 144
 
-    // Configure PWM1 on OC1 (pin 14)										-- Is this supposed to be PWM2 on pin 4? - David
+    // Configure PWM2 on OC1 (pin 4)										-- Is this supposed to be PWM2 on pin 4? - David
     OC2CON1 = 0b0000;               // Clear OC2 configuration bits, Table 4-8
     OC2CON2 = 0b0000;               // Clear OC2 configuration bits, Table 4-8
     OC2CON1bits.OCTSEL = 0b000;       // Use Timer2, pg. 157
@@ -349,17 +353,17 @@ void ultrasonic_setup()
 	}
 	
 	// CONFIGURE PWM3 (on pin 5) USING TIMER2
-    // Configure Timer2, which will be the source for the output compare that
-    // drives Ultrasonic_Front													-- I thought Timer2 was for Ultra front? - David
-    T2CONbits.TON = 0;      	// Timer2 off while configuring PWM, pg. 144
-    T2CONbits.TCKPS = 0b00;    	// Timer2 1:1 clock pre-scale, pg. 144
-    T2CONbits.T32 = 0;      	// Timer2 acts as a single 16-bit timer, pg. 144
-    T2CONbits.TCS = 0;      	// Timer2 internal clock source, pg. 144
+    // Configure Timer3, which will be the source for the output compare that
+    // drives Ultrasonic_Front													
+    T3CONbits.TON = 0;      	// Timer3 off while configuring PWM, pg. 144
+    T3CONbits.TCKPS = 0b00;    	// Timer3 1:1 clock pre-scale, pg. 144
+    T3CONbits.T32 = 0;      	// Timer3 acts as a single 16-bit timer, pg. 144
+    T3CONbits.TCS = 0;      	// Timer3 internal clock source, pg. 144
 
-    // Configure PWM1 on OC1 (pin 14)											-- Is this supposed to be PWM3 on pin 5? -David
+    // Configure PWM3 on OC1 (pin 5)											
     OC3CON1 = 0b0000;               	// Clear OC3 configuration bits, Table 4-8
     OC3CON2 = 0b0000;               	// Clear OC3 configuration bits, Table 4-8
-    OC3CON1bits.OCTSEL = 0b000;       	// Use Timer2, pg. 157
+    OC3CON1bits.OCTSEL = 0b001;       	// Use Timer2, pg. 157
     OC3CON1bits.OCM = 0b110;          	// Edge-aligned PWM mode, pg. 158
     OC3CON2bits.SYNCSEL = 0b01100;    	// Use Timer2, pg. 160
 
@@ -452,7 +456,7 @@ void ir_finder_analog_setup()
 }
 
 
-void _ISR _CNInterrupt(void)    //Encoder Reading Code...   -- Encoder? - David
+void _ISR _CNInterrupt(void)    //Interrupt
 {
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
 	

@@ -37,7 +37,7 @@ int i;
 unsigned long startTime;
 #include "board.h" //set up pin names, hold all additional functions
 
-typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, end} state;	//Initialize all states...
+typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
 state STATE = findLoader;	//Default state initialization
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
@@ -145,7 +145,10 @@ int main()
 						{
 							findLoaderState = 1;
 							startTime = milliseconds;
-							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0);	//Pause and allow for the IR sensor to adjust
+							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)//Pause and allow for the IR sensor to adjust
+                            {
+                                //do nothing
+                            }
 						}
 						else
 						{
@@ -155,7 +158,7 @@ int main()
 					case 1:	//Turn completed...
 						if((milliseconds - irTimeValues[0]) < ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)	//The array of 5 values has been filled recently by interrupts (IR Beacon Found)
 						{
-							findLoaderState = 0; // Is this line necessary? - David
+							findLoaderState = 0; // Must be used in series with findCenter
 							STATE = toLoader;
 						}
 						else
@@ -262,7 +265,13 @@ int main()
                 
                     STATE = toLoader;
 				break;
-				
+			
+            case findLoader2:
+                //TO DO: Turn back to face loader depending on which target you shot at... 
+                break;
+                
+                
+                
 			case end:
 				//do nothing
 				break;
