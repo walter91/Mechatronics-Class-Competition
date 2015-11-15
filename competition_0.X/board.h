@@ -31,8 +31,8 @@
 
 
 //Values
-#define LEFT_FORWARD 0
-#define RIGHT_FORWARD 1
+#define LEFT_FORWARD 1
+#define RIGHT_FORWARD 0
 
 #define LEFT_BACKWARD 1
 #define RIGHT_BACKWARD 0
@@ -45,12 +45,47 @@
 #define STANDARD_STEP_LENGTH .09
 #define STANDARD_STEP_ANGLE .05
 
-#define LOADING_IR_FREQ
+#define LOADING_IR_FREQ 100
 
 #define INCHES_CORNER_TO_CENTER 33.3
 
 #define IR_FOUND_THRESH 70  //Percent of full voltage
 
+#define INCH_PER_MIRCOSECONDS .00676
+
+float read_dist()
+{
+	static unsigned long averageMicrosF;
+	static unsigned long averageMicrosB;
+	static unsigned long oldAverageMicrosF;
+	static unsigned long oldAverageMicrosB;
+	static float distance;
+	
+	static unsigned long sumMicrosF;
+	static unsigned long sumMicrosB;
+	
+	sumMicrosF = 0;
+	sumMicrosB = 0;
+	
+	for(i = 0; i <= ULTRASONIC_VALUES; i++)
+	{
+		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
+		sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
+	}
+	
+	sumMicrosF = sumMicrosF + oldAverageMicrosF;
+	sumMicrosB = sumMicrosB + oldAverageMicrosB;
+	
+	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
+	averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
+	
+	oldAverageMicrosF = averageMicrosF;
+	oldAverageMicrosB = averageMicrosB;
+	
+	distance = (( 48.0 - ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) - INCH_FROM_ULTRA_TO_CENTER ) + ( ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) + INCH_FROM_ULTRA_TO_CENTER ))/2.0;
+	
+	return(distance);
+}
 
 
 float ir_front_percent()
@@ -105,6 +140,13 @@ void toggle(int pinToToggle)
     }
 }
 
+float abs_f(float value)
+{
+	if(value >= 0)
+		return(value);
+	else
+		return(-1.0*value);
+}
 
 int go_straight_inches(float inches)
 {
@@ -113,37 +155,45 @@ int go_straight_inches(float inches)
     static int stepsPerInch = (int)(stepsPerRev/wheelCircumferenceInches);	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
     static int numberOfSteps;
     static int stepsTaken = 0;
-    static long lastTime;
-    lastTime = milliseconds;
+    static long lastTime = 0;
+    //lastTime = milliseconds;
 
-    numberOfSteps = (int)(inches*stepsPerInch);	//convert inches to number of steps
+    numberOfSteps = (int)(abs_f(inches)*stepsPerInch);	//convert inches to number of steps
 
     if(inches >= 0)
     {
-        PIN_DIR_R = RIGHT_FORWARD;  //set direction pins, both forward
-        PIN_DIR_L = LEFT_FORWARD;  //set direction pins, both forward
+         _RB7 = 0;  //set direction pins, both forward
+         _RB8 = 1;  //set direction pins, both forward
     }
 
     else
     {
-        PIN_DIR_R = RIGHT_BACKWARD;  //set direction pins, both backward
-        PIN_DIR_L = LEFT_BACKWARD;  //set direction pins, both backward
+        _RB7 = 1;  //set direction pins, both backward
+        _RB8 = 0;  //set direction pins, both backward
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
     {
-        if((milliseconds - lastTime) < STEP_DELAY)  //Not yet waited long enough
+        if((milliseconds - lastTime) <= STEP_DELAY)  //Not yet waited long enough
         {
             //do nothing YET...
         }
         else    //Its time to step...
         {
-            toggle(PIN_STEP_R); //Change the value from 1->0 or visa-versa
-            toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
-            if(PIN_STEP_R == 1) //Step pin was toggled HIGH
+            if(_RB15)
+            {
+                _RB15 = 0;
+            }
+            else
+            {
+                _RB15 = 1;
+            }
+            //toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
+            if(_RB15 == 1) //Step pin was toggled HIGH
             {
                 stepsTaken++;   //Count steps when pulse goes HIGH
             }
+            lastTime = milliseconds;
         }
         return(0);  //Need to continue
     }
@@ -159,37 +209,44 @@ int turn_degrees(int degrees)
 {
     static int stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
     static int numberOfSteps;   //Number of steps to reach the desired degrees
-    numberOfSteps = (int)(degrees * stepsPerDegree); // This rounds to lower integer, right? - David
+    numberOfSteps = (int)(abs_f(degrees) * stepsPerDegree); // This rounds to lower integer, right? - David
     static int stepsTaken = 0;
-    static long lastTime;
-    lastTime = milliseconds;
+    static long lastTime = 0;
 
 
     if(degrees >= 0)
     {
-        PIN_DIR_R = RIGHT_BACKWARD;  //set direction pins
-        PIN_DIR_L = LEFT_FORWARD;  //set direction pins
+        PIN_DIR_R = 1;  //set direction pins
+        PIN_DIR_L = 1;  //set direction pins
     }
     else
     {
-        PIN_DIR_R = RIGHT_FORWARD;  //set direction pins
-        PIN_DIR_L = LEFT_BACKWARD;  //set direction pins
+        PIN_DIR_R = 0;  //set direction pins
+        PIN_DIR_L = 0;  //set direction pins
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
     {
-        if((milliseconds - lastTime) < STEP_DELAY)  //Not yet waited long enough
+        if((milliseconds - lastTime) <= STEP_DELAY)  //Not yet waited long enough
         {
             //do nothing YET...
         }
         else    //Its time to step...
         {
-            toggle(PIN_STEP_R); //Change the value from 1->0 or visa-versa
-            toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
-            if(PIN_STEP_R == 1) //Step pin was toggled HIGH
+            if(_RB15)
+            {
+                _RB15 = 0;
+            }
+            else
+            {
+                _RB15 = 1;
+            }
+            //toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
+            if(_RB15 == 1) //Step pin was toggled HIGH
             {
                 stepsTaken++;   //Count steps when pulse goes HIGH
             }
+            lastTime = milliseconds;
         }
         return(0);  //Need to continue
     }
@@ -205,7 +262,7 @@ int find_normal()
 {
 	static int statFlag = 0;
 	static int dirFlag = 0;
-	static float dist1 = read_dist();	//Dist1 = Measure distance
+	static float dist1 = 33.3;	//Dist1 = Measure distance
 	//TODO: Write read_dist() function. Should return float value of filtered distance measurements...
 	if(dirFlag == 0)
 	{
@@ -254,13 +311,7 @@ int find_normal()
 }
 
 
-float abs_f(float value)
-{
-	if(value >= 0)
-		return(value);
-	else
-		return(-1.0*value);
-}
+
 
 
 int abs_i(int value)
@@ -314,7 +365,7 @@ void ultrasonic_setup()
 	ultraLastStateF = PIN_DIST_F;
 	ultraLastStateB = PIN_DIST_B;
 	
-	#define INCH_PER_MIRCOSECONDS
+	
 	
 	for(i = 0; i <= ULTRASONIC_VALUES; i++)
 	{
@@ -346,26 +397,26 @@ void ultrasonic_setup()
     T2CONbits.TON = 1;
 
 	//Delay so that the periods are offset by 25 milliseconds
-	startTime = milliseconds;
-	while( (milliseconds - startTime) <= 25)
-	{
-		//Do nothing. We're offsetting the periods of OC2 and OC3...
-	}
+	//startTime = milliseconds;
+	//while( (milliseconds - startTime) <= 25)
+	//{
+	//	//Do nothing. We're offsetting the periods of OC2 and OC3...
+	//}
 	
 	// CONFIGURE PWM3 (on pin 5) USING TIMER2
     // Configure Timer3, which will be the source for the output compare that
     // drives Ultrasonic_Front													
     T3CONbits.TON = 0;      	// Timer3 off while configuring PWM, pg. 144
     T3CONbits.TCKPS = 0b00;    	// Timer3 1:1 clock pre-scale, pg. 144
-    T3CONbits.T32 = 0;      	// Timer3 acts as a single 16-bit timer, pg. 144
+    //T3CONbits.T32 = 0;      	// Timer3 acts as a single 16-bit timer, pg. 144
     T3CONbits.TCS = 0;      	// Timer3 internal clock source, pg. 144
 
     // Configure PWM3 on OC1 (pin 5)											
     OC3CON1 = 0b0000;               	// Clear OC3 configuration bits, Table 4-8
     OC3CON2 = 0b0000;               	// Clear OC3 configuration bits, Table 4-8
-    OC3CON1bits.OCTSEL = 0b001;       	// Use Timer2, pg. 157
+    OC3CON1bits.OCTSEL = 0b001;       	// Use Timer3, pg. 157
     OC3CON1bits.OCM = 0b110;          	// Edge-aligned PWM mode, pg. 158
-    OC3CON2bits.SYNCSEL = 0b01100;    	// Use Timer2, pg. 160
+    OC3CON2bits.SYNCSEL = 0b01101;    	// Unsyncronized, pg. 160
 
     // Set period and duty cycle
     PR3 = 25000;         	// Period of Timer3 = 50ms
@@ -373,7 +424,16 @@ void ultrasonic_setup()
     OC3R = 5;               // On time of 10us
 
     // Turn on Timer2
-    T2CONbits.TON = 1;
+    T3CONbits.TON = 1;
+    
+    _TRISB0 = 0;
+    _TRISB1 = 0;
+    
+    ANSB = 0;
+    
+    TMR2 = 0;
+    TMR3 = 12500;
+	
 	
 }
 
@@ -463,9 +523,9 @@ void _ISR _CNInterrupt(void)    //Interrupt
 	timeTemp = microseconds;
     timeTempMillis = milliseconds;
 	
-    if(PIN_IR_B != loaderIrState) //Rear (towards the Loader) state has changed
+    if(_RA1 != loaderIrState) //Rear (towards the Loader) state has changed
     {
-        loaderIrState = PIN_IR_B;
+        loaderIrState = _RA1;
         
         for(i = 0; i < IR_TIMES; i++)
 			{
@@ -474,11 +534,11 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		irTimeValues[IR_TIMES] = (timeTempMillis);
     }
         
-	else if(PIN_DIST_B != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
+	else if(_RA2 != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
 	{
-        ultraLastStateB = PIN_DIST_B;
+        ultraLastStateB = _RA2;
         
-		if(PIN_DIST_B)	//Rear Ultrasonic Pulse Just Started
+		if(_RA2)	//Rear Ultrasonic Pulse Just Started
 		{
 			startTimeUltraB = timeTemp;
 		}
@@ -492,11 +552,11 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		}
 	}
 	
-	else if(PIN_DIST_F != ultraLastStateF)	//The Front Ultrasonic Pulse Train Just Changed
+	else if(_RB2 != ultraLastStateF)	//The Front Ultrasonic Pulse Train Just Changed
 	{
-        ultraLastStateF = PIN_DIST_F;
+        ultraLastStateF = _RB2;
         
-		if(PIN_DIST_F)	//Front Ultrasonic Pulse Just Started
+		if(_RB2)	//Front Ultrasonic Pulse Just Started
 		{
 			startTimeUltraF = timeTemp;
 		}
@@ -513,39 +573,7 @@ void _ISR _CNInterrupt(void)    //Interrupt
 }
 
 
-float read_dist()
-{
-	static unsigned long averageMicrosF;
-	static unsigned long averageMicrosB;
-	static unsigned long oldAverageMicrosF;
-	static unsigned long oldAverageMicrosB;
-	static float distance;
-	
-	static unsigned long sumMicrosF;
-	static unsigned long sumMicrosB;
-	
-	sumMicrosF = 0;
-	sumMicrosB = 0;
-	
-	for(i = 0; i <= ULTRASONIC_VALUES; i++)
-	{
-		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
-		sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
-	}
-	
-	sumMicrosF = sumMicrosF + oldAverageMicrosF;
-	sumMicrosB = sumMicrosB + oldAverageMicrosB;
-	
-	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
-	averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
-	
-	oldAverageMicrosF = averageMicrosF;
-	oldAverageMicrosB = averageMicrosB;
-	
-	distance = (( 48.0 - ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) - INCH_FROM_ULTRA_TO_CENTER ) + ( ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) + INCH_FROM_ULTRA_TO_CENTER ))/2.0;
-	
-	return(distance);
-}
+
 
 
 
