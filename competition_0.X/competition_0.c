@@ -2,6 +2,14 @@
 
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
+int findCenterState = 0;
+	int findLoaderState = 0;
+	int toLoaderState = 0;
+	int loadingState = 0;
+	int toShootingState = 0;
+	int findTargetState = 0;
+	int shottingState = 0;
+
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 unsigned long microseconds = 0;	//Will overflow after 71 minutes
 unsigned long countTimer = 0;
@@ -38,7 +46,7 @@ unsigned long startTime;
 #include "board.h" //set up pin names, hold all additional functions
 
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
-state STATE = findLoader;	//Default state initialization
+state STATE = findCenter;	//Default state initialization
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
@@ -71,20 +79,53 @@ void timing_interrupt_config()
     PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
 }
 
+
+
+void config_pwm_14()
+{
+    //------------------------------------------------------------------
+    // CONFIGURE PWM1 (on pin 14) USING TIMER2
+
+    // Configure Timer2, which will be the source for the output compare that
+    // drives PWM1
+    T2CONbits.TON = 0;      // Timer2 off while configuring PWM, pg. 144
+    T2CONbits.TCKPS = 0b00;    // Timer2 1:1 clock pre-scale, pg. 144
+    T2CONbits.T32 = 0;      // Timer2 acts as a single 16-bit timer, pg. 144
+    T2CONbits.TCS = 0;      // Timer2 internal clock source, pg. 144
+
+    // Configure PWM1 on OC1 (pin 14)
+    OC1CON1 = 0b0000;               // Clear OC1 configuration bits, Table 4-8
+    OC1CON2 = 0b0000;               // Clear OC1 configuration bits, Table 4-8
+    OC1CON1bits.OCTSEL = 0b000;       // Use Timer2, pg. 157
+    OC1CON1bits.OCM = 0b110;          // Edge-aligned PWM mode, pg. 158
+    OC1CON2bits.SYNCSEL = 0b01100;    // Use Timer2, pg. 160
+
+    // Set period and duty cycle
+    PR2 = 3999;                // Period of Timer2 to achieve FPWM = 1 kHz
+                            // See Equation 15-1 in the data sheet
+    OC1R = 3999;               // Set Output Compare value to achieve desired duty
+                            // cycle. This is the number of timer counts when
+                            // the OC should send the PWM signal low. The duty
+                            // cycle as a fraction is OC1R/PR2.
+
+    // Turn on Timer2
+    T2CONbits.TON = 1;
+}
+
+
+
+
+
 int main()
 {	
     
-    
+    config_pwm_14();
 	timing_interrupt_config();
 	ultrasonic_setup();
-    
-	int findCenterState = 0;
-	int findLoaderState = 0;
-	int toLoaderState = 0;
-	int loadingState = 0;
-	int toShootingState = 0;
-	int findTargetState = 0;
-	int shottingState = 0;
+    ANSB = 0;
+    _TRISB15 = 0;
+    _TRISB8 = 0;
+	
 
 	while(1)
 	{
@@ -280,6 +321,6 @@ int main()
 				//Not sure what to do yet. This means there is an error somewhere. Maybe turn on an LED?...
 				break;			
 		}
-	}
+    }
     return(0);
 }
