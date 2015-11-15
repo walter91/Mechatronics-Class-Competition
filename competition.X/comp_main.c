@@ -3,45 +3,13 @@
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
 int findCenterState = 0;
-	int findLoaderState = 0;
-	int toLoaderState = 0;
-	int loadingState = 0;
-	int toShootingState = 0;
-	int findTargetState = 0;
-	int shottingState = 0;
+int findLoaderState = 0;
+int toLoaderState = 0;
+int loadingState = 0;
+int toShootingState = 0;
+int findTargetState = 0;
+int shottingState = 0;
 
-unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
-unsigned long microseconds = 0;	//Will overflow after 71 minutes
-unsigned long countTimer = 0;
-
-unsigned long startTimeUltraF;
-unsigned long startTimeUltraB;
-
-unsigned long stopTimeUltraF;
-unsigned long stopTimeUltraB;
-
-unsigned long timeTemp;
-unsigned long timeTempMillis;
-
-int ultraLastStateB;
-int ultraLastStateF;
-
-int targetsFound = 0b000;
-
-int loaderIrState;
-#define IR_TIMES 5
-unsigned long irTimeValues[IR_TIMES];
-
-
-
-
-#define ULTRASONIC_VALUES 10
-
-unsigned long ultrasonicValuesB[ULTRASONIC_VALUES];
-unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
-
-int i;
-unsigned long startTime;
 
 #include "board.h" //set up pin names, hold all additional functions
 

@@ -36,6 +36,37 @@
 
 #define INCH_PER_MIRCOSECONDS .00676
 
+unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
+unsigned long microseconds = 0;	//Will overflow after 71 minutes
+unsigned long countTimer = 0;
+
+unsigned long startTimeUltraF;
+unsigned long startTimeUltraB;
+
+unsigned long stopTimeUltraF;
+unsigned long stopTimeUltraB;
+
+unsigned long timeTemp;
+unsigned long timeTempMillis;
+
+int ultraLastStateB;
+int ultraLastStateF;
+
+int targetsFound = 0b000;
+
+int loaderIrState;
+#define IR_TIMES 5
+unsigned long irTimeValues[IR_TIMES];
+
+#define ULTRASONIC_VALUES 10
+
+unsigned long ultrasonicValuesB[ULTRASONIC_VALUES];
+unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
+
+int i;
+unsigned long startTime;
+
+
 void pin_config_init()
 {
     _TRISA0 = 1;    //IR FRONT
