@@ -36,6 +36,61 @@
 
 #define INCH_PER_MIRCOSECONDS .00676
 
+void pin_config_init()
+{
+    _TRISA0 = 1;    //IR FRONT
+    _TRISA1 = 1;    //IR BACK
+    
+    _TRISB0 = 0;    //FRONT TRIGGER
+    _TRISB1 = 0;    //BACK TRIGGER
+    
+    _TRISB2 = 1;    //ULTRASONIC ECHO FRONT
+    _TRISA2 = 1;    //ULTRASONIC ECHO BACK
+    
+    _TRISA3 = 1;    //LOADING SENSOR INPUT
+    
+    _TRISB7 = 0;    //DIR-RIGHT
+    _TRISB8 = 0;    //DIR-LEFT
+    _TRISB15 = 0;   //STEP
+    
+    _TRISB9 = 0;    //LOADER TOP
+    _TRISA6 = 0;    //SHOOTER
+    _TRISB12 = 0;   //LOADER BOTTOM
+}
+
+
+void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
+{
+    // Remember to clear the Timer1 interrupt flag when this ISR is entered.
+    _T1IF = 0; // Clear interrupt flag
+    
+	microseconds = microseconds + 100;
+	
+	countTimer++;
+	
+	if(countTimer >= 10)
+    {
+		milliseconds++;
+		countTimer = 0;
+	}
+}
+
+
+void timing_interrupt_config()
+{
+	_TON = 1;	//Turn on timer 1, for general use
+	
+    _TCKPS = 0b00;  //Timer pre-scaler set to 1:1, page 139
+    _RCDIV = 0b011; //1mHz (with 8mHz), divide by 8
+    
+    // Configure Timer1 interrupt
+    _T1IP = 5;      // Select interrupt priority
+    _T1IE = 1;      // Enable interrupt
+    _T1IF = 0;      // Clear interrupt flag
+    PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
+}
+
+
 float read_dist()
 {
 	static unsigned long averageMicrosF;
@@ -118,6 +173,7 @@ float abs_f(float value)
 	else
 		return(-1.0*value);
 }
+
 
 int go_straight_inches(float inches)
 {

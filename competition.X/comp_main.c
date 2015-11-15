@@ -48,39 +48,6 @@ unsigned long startTime;
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
 state STATE = findCenter;	//Default state initialization
 
-void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
-{
-    // Remember to clear the Timer1 interrupt flag when this ISR is entered.
-    _T1IF = 0; // Clear interrupt flag
-    
-	microseconds = microseconds + 100;
-	
-	countTimer++;
-	
-	if(countTimer >= 10)
-    {
-		milliseconds++;
-		countTimer = 0;
-	}
-}
-
-
-void timing_interrupt_config()
-{
-	_TON = 1;	//Turn on timer 1, for general use
-	
-    _TCKPS = 0b00;  //Timer pre-scaler set to 1:1, page 139
-    _RCDIV = 0b011; //1mHz (with 8mHz), divide by 8
-    
-    // Configure Timer1 interrupt
-    _T1IP = 5;      // Select interrupt priority
-    _T1IE = 1;      // Enable interrupt
-    _T1IF = 0;      // Clear interrupt flag
-    PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
-}
-
-
-
 void config_pwm_14()
 {
     //------------------------------------------------------------------
@@ -113,20 +80,16 @@ void config_pwm_14()
 }
 
 
-
-
-
 int main()
 {	
-    
     config_pwm_14();
-	timing_interrupt_config();
+    
+    pin_config_init();
+    timing_interrupt_config();
 	ultrasonic_setup();
-    ANSB = 0;
-    _TRISB15 = 0;
-    _TRISB8 = 0;
-	
-
+    
+    ANSB = 0;     
+    
 	while(1)
 	{
 		switch(STATE)
