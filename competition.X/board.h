@@ -13,23 +13,6 @@
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
-//Pin Definitions
-#define PIN_STEP_R _RB0 //4
-#define PIN_STEP_L _RB1 //5
-
-#define PIN_DIR_R _RB7  //11
-#define PIN_DIR_L _RB8  //12
-
-#define PIN_IR_F _RA0 //2
-#define PIN_IR_B _RA1 //3
-
-#define PIN_DIST_F _RB2  //6
-#define PIN_DIST_B _RA2  //7
-
-#define PIN_SWITCH_R _RB13  //16
-#define PIN_SWITCH_L _RB14  //17
-
-
 //Values
 #define LEFT_FORWARD 1
 #define RIGHT_FORWARD 0
@@ -128,18 +111,6 @@ int ir_back_found()
 }
 
 
-void toggle(int pinToToggle)
-{
-    if(pinToToggle)
-    {
-        pinToToggle = 0;
-    }
-    else
-    {
-        pinToToggle = 1;
-    }
-}
-
 float abs_f(float value)
 {
 	if(value >= 0)
@@ -156,20 +127,19 @@ int go_straight_inches(float inches)
     static int numberOfSteps;
     static int stepsTaken = 0;
     static long lastTime = 0;
-    //lastTime = milliseconds;
 
     numberOfSteps = (int)(abs_f(inches)*stepsPerInch);	//convert inches to number of steps
 
     if(inches >= 0)
     {
-         _RB7 = 0;  //set direction pins, both forward
-         _RB8 = 1;  //set direction pins, both forward
+        _RB7 = 0;  //set direction pins, both forward, DIR-R
+        _RB8 = 1;  //set direction pins, both forward, DIR-L
     }
 
     else
     {
-        _RB7 = 1;  //set direction pins, both backward
-        _RB8 = 0;  //set direction pins, both backward
+        _RB7 = 1;  //set direction pins, both backward, DIR-R
+        _RB8 = 0;  //set direction pins, both backward, DIR-L
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
@@ -180,16 +150,16 @@ int go_straight_inches(float inches)
         }
         else    //Its time to step...
         {
-            if(_RB15)
+            if(_RB15)   //STEP
             {
-                _RB15 = 0;
+                _RB15 = 0;  //STEP
             }
             else
             {
-                _RB15 = 1;
+                _RB15 = 1;  //STEP
             }
-            //toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
-            if(_RB15 == 1) //Step pin was toggled HIGH
+            
+            if(_RB15 == 1) //STEP was transitioned HIGH
             {
                 stepsTaken++;   //Count steps when pulse goes HIGH
             }
@@ -214,15 +184,15 @@ int turn_degrees(int degrees)
     static long lastTime = 0;
 
 
-    if(degrees >= 0)
+    if(degrees >= 0)    //Turn CW
     {
-        PIN_DIR_R = 1;  //set direction pins
-        PIN_DIR_L = 1;  //set direction pins
+        _RB7 = 1;  //set DIR-R
+        _RB8 = 1;  //set DIR-L
     }
     else
     {
-        PIN_DIR_R = 0;  //set direction pins
-        PIN_DIR_L = 0;  //set direction pins
+        _RB7 = 0;  //set DIR-R
+        _RB8 = 0;  //set DIR-L
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
@@ -311,18 +281,6 @@ int find_normal()
 }
 
 
-
-
-
-int abs_i(int value)
-{
-	if(value >= 0)
-		return(value);
-	else
-		return(-1*value);
-}
-
-
 int find_24()
 {
 	static float error;
@@ -362,10 +320,8 @@ void ultrasonic_setup()
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
     _CNIE = 1;      // Enable CN interrupts (IEC1 register)
 	
-	ultraLastStateF = PIN_DIST_F;
-	ultraLastStateB = PIN_DIST_B;
-	
-	
+	ultraLastStateF = _RB2; //Current state of ultrasonic
+	ultraLastStateB = _RA2; //Current state of ultrasonic
 	
 	for(i = 0; i <= ULTRASONIC_VALUES; i++)
 	{
@@ -395,13 +351,6 @@ void ultrasonic_setup()
 
     // Turn on Timer2
     T2CONbits.TON = 1;
-
-	//Delay so that the periods are offset by 25 milliseconds
-	//startTime = milliseconds;
-	//while( (milliseconds - startTime) <= 25)
-	//{
-	//	//Do nothing. We're offsetting the periods of OC2 and OC3...
-	//}
 	
 	// CONFIGURE PWM3 (on pin 5) USING TIMER2
     // Configure Timer3, which will be the source for the output compare that
@@ -434,7 +383,6 @@ void ultrasonic_setup()
     TMR2 = 0;
     TMR3 = 12500;
 	
-	
 }
 
 
@@ -450,7 +398,7 @@ void loader_finder_digital_setup()
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
     _CNIE = 1;      // Enable CN interrupts (IEC1 register)
 	
-	loaderIrState = PIN_IR_B;
+	loaderIrState = _RA1;   //IR Back
 	
 	for(i = 0; i <= IR_TIMES; i++)
 	{
@@ -571,10 +519,6 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		}
 	}
 }
-
-
-
-
 
 
 #ifdef	__cplusplus

@@ -13,7 +13,6 @@ int findCenterState = 0;
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 unsigned long microseconds = 0;	//Will overflow after 71 minutes
 unsigned long countTimer = 0;
-//unsigned long countTimerMilli = 0; 
 
 unsigned long startTimeUltraF;
 unsigned long startTimeUltraB;
@@ -43,6 +42,7 @@ unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
 
 int i;
 unsigned long startTime;
+
 #include "board.h" //set up pin names, hold all additional functions
 
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
