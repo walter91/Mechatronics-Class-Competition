@@ -37,11 +37,17 @@ int main()
     pin_config_init();
     timing_interrupt_config();
     ultrasonic_setup();
-    
+    config_pwm_14();
     
     while(1)
     {
-        OC1R = (read_dist()/48.0)*PR2;    //Should output PWM with duty cycle from 0%-100% for 0"-48"
+        //OC1R = .5*PR2;
+        OC1R = ((read_dist_simple()/148.0)/48.0)*PR2;    //Should output PWM with duty cycle from 0%-100% for 0"-48"
+        startTime = milliseconds;
+        while(milliseconds - startTime <= 50)
+        {
+            //do nothing
+        }
     }
 }
 

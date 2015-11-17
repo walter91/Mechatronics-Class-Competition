@@ -40,6 +40,8 @@ unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 unsigned long microseconds = 0;	//Will overflow after 71 minutes
 unsigned long countTimer = 0;
 
+unsigned long simpleUltrasonicTime = 0;
+
 unsigned long startTimeUltraF;
 unsigned long startTimeUltraB;
 
@@ -55,7 +57,7 @@ int ultraLastStateF;
 int targetsFound = 0b000;
 
 int loaderIrState;
-#define IR_TIMES 5
+#define IR_TIMES 3
 unsigned long irTimeValues[IR_TIMES];
 
 #define ULTRASONIC_VALUES 10
@@ -191,6 +193,25 @@ float read_dist()
 	
 	return(distance);
 }
+
+
+
+float read_dist_simple()
+{
+    
+    float sumMicrosF = 0;
+	
+	for(i = 0; i <= ULTRASONIC_VALUES; i++)
+	{
+		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
+	}
+	
+	float averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES );
+    
+	//return(averageMicrosF);
+    return(simpleUltrasonicTime);
+}
+
 
 
 float ir_front_percent()
@@ -661,12 +682,14 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		}
 		else	//Front Ultrasonic Pulse Just Ended
 		{
-			
+			simpleUltrasonicTime = ((timeTemp - startTimeUltraF) + simpleUltrasonicTime)/2;
+            
 			for(i = 0; i < ULTRASONIC_VALUES; i++)
 			{
 				ultrasonicValuesF[i] = ultrasonicValuesF[i+1];	//Replace current value with next value...
 			}
 			ultrasonicValuesF[ULTRASONIC_VALUES] = (timeTemp - startTimeUltraF);
+            
 		}
 	}
 }
