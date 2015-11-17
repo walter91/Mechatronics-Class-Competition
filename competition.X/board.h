@@ -122,6 +122,42 @@ void timing_interrupt_config()
 }
 
 
+float ultra_avg()
+{
+    static unsigned long averageMicrosF;
+	static unsigned long averageMicrosB;
+	static unsigned long oldAverageMicrosF;
+	static unsigned long oldAverageMicrosB;
+	static float distance;
+	
+	static unsigned long sumMicrosF;
+	static unsigned long sumMicrosB;
+	
+	sumMicrosF = 0;
+	sumMicrosB = 0;
+	
+	for(i = 0; i <= ULTRASONIC_VALUES; i++)
+	{
+		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
+		sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
+	}
+	
+	sumMicrosF = sumMicrosF + oldAverageMicrosF;
+	sumMicrosB = sumMicrosB + oldAverageMicrosB;
+	
+	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
+	averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
+	
+	oldAverageMicrosF = averageMicrosF;
+	oldAverageMicrosB = averageMicrosB;
+    
+    distance  =  (averageMicrosF+averageMicrosB)/2.0;
+    
+    
+    return(distance);
+}
+
+
 float read_dist()
 {
 	static unsigned long averageMicrosF;
@@ -346,7 +382,7 @@ int find_normal()
 	static int statFlag = 0;
 	static int dirFlag = 0;
 	static float dist1 = 33.3;	//Dist1 = Measure distance
-	//TODO: Write read_dist() function. Should return float value of filtered distance measurements...
+	
 	if(dirFlag == 0)
 	{
 		turn_degrees(1);	//Turn 1 degree
@@ -356,7 +392,7 @@ int find_normal()
 		turn_degrees(-1);
 	}
 	static float dist2;	//Dist2 = Measure distance
-	dist2 = read_dist();
+	dist2 = ultra_avg();
 	
 	if((dist2 > dist1) && (statFlag == 0))	//If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
 	{
@@ -368,13 +404,14 @@ int find_normal()
 		{
 			dirFlag = 1;
 		}
-		
+		dist1 = dist2;
 		return(0);	//keep searching
 	}		
 	else if(dist1 > dist2)	//Going right direction
 	{
 		//	Continue turning in that direction
 		statFlag = 0;		//	Flag = 1
+        dist1 = dist2;
 		return(0);	// keep searching
 	}
 	else if((dist2 > dist1) && (statFlag == 1))		//Else if(Dist2 > Dist1 && Flag==1)	//Reached the minimum
@@ -387,9 +424,10 @@ int find_normal()
 		{
 			turn_degrees(STANDARD_STEP_ANGLE);	//	Go back half a step in angle
 		}
-		
+		dist1 = dist2;
+        statFlag = 0;	//	Flag = 0
 		return(1);	//	Return(1)
-		statFlag = 0;	//	Flag = 0
+		        
 	}
 }
 
