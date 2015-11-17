@@ -160,14 +160,40 @@ float read_dist()
 float ir_front_percent()
 {
     //return values between 0-100 for percent of IR seen
-    return(-0.0298*ADC1BUF0 + 122.1);
+    
+    static float voltageHigh = 2.5;
+    static float voltageLow = 0.6;
+    
+    float numHigh = ((2^12)-1)*(voltageHigh/3.3);
+    float numLow = ((2^12)-1)*(voltageLow/3.3);
+    
+    float rate = 100/(numLow - numHigh);
+
+    float offset = 100 - (rate*numLow);
+
+    float percent = ADC1BUF0*rate + offset;
+    
+    return(percent);
 }
 
 
 float ir_back_percent()
 {
     //return values between 0-100 for percent of IR seen
-    return(-0.0298*ADC1BUF1 + 122.1);
+    
+    static float voltageHigh = 2.5;
+    static float voltageLow = 0.6;
+    
+    float numHigh = ((2^12)-1)*(voltageHigh/3.3);
+    float numLow = ((2^12)-1)*(voltageLow/3.3);
+    
+    float rate = 100/(numLow - numHigh);
+
+    float offset = 100 - (rate*numLow);
+
+    float percent = ADC1BUF0*rate + offset;
+    
+    return(percent);
 }
 
 
