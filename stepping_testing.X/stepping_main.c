@@ -11,23 +11,49 @@ int main()
     pin_config_init();
     timing_interrupt_config();
     
-    
+    //Wait to move hand from switch
+        delay(15000);
+        
     while(1)
     {
-       switch(STATE)
+      
+        //if(go_straight_inches(13))
+        //{
+            //do nothing
+        //}
+        
+                
+        switch(STATE)
        {
             case 0:
-                if(turn_degrees(45))
+                if(go_straight_inches(10))
                 {
+                    delay(250);
                     STATE = 1;
                 }
                 break;
            case 1:
-                if(go_straight_inches(3))
+                if(go_straight_inches(-5))
                 {
+                    delay(250);
+                    STATE = 2;
+                }
+                break;
+            case 2:
+                if(go_straight_inches(5))
+                {
+                    delay(250);
+                    STATE = 3;
+                }
+                break;
+            case 3:
+                if(go_straight_inches(-10))
+                {
+                    delay(10000);
                     STATE = 0;
                 }
                 break;
-       }            
+       }
+                 
     }
 }

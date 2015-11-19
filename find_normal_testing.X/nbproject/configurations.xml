@@ -18,11 +18,10 @@
                    projectFiles="false">
       <itemPath>Makefile</itemPath>
     </logicalFolder>
-    <itemPath>stepping_main.c</itemPath>
+    <itemPath>normal_main.c</itemPath>
     <itemPath>../competition.X/board.h</itemPath>
   </logicalFolder>
   <sourceRootList>
-    <Elem>../Mechatronics-Class-Competition/competition.X</Elem>
     <Elem>../competition.X</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
@@ -190,7 +189,6 @@
         <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
         <property key="UART 1" value="true"/>
         <property key="UART 2" value="true"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>
@@ -201,7 +199,7 @@
         <property key="memories.flashdata" value="true"/>
         <property key="memories.id" value="true"/>
         <property key="memories.programmemory" value="true"/>
-        <property key="memories.programmemory.end" value="0x2bff"/>
+        <property key="memories.programmemory.end" value="0x57ff"/>
         <property key="memories.programmemory.partition2" value="true"/>
         <property key="memories.programmemory.partition2.end"
                   value="${memories.programmemory.partition2.end.value}"/>
@@ -216,7 +214,7 @@
         <property key="programoptions.preservedataflash" value="false"/>
         <property key="programoptions.preserveeeprom" value="false"/>
         <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.end" value="0x2bff"/>
+        <property key="programoptions.preserveprogramrange.end" value="0x57ff"/>
         <property key="programoptions.preserveprogramrange.start" value="0x0"/>
         <property key="programoptions.preserveuserid" value="false"/>
         <property key="programoptions.programcalmem" value="false"/>

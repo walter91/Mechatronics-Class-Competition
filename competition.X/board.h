@@ -20,13 +20,18 @@
 #define LEFT_BACKWARD 1
 #define RIGHT_BACKWARD 0
 
-#define STEP_DELAY 10 // Is this value arbitrary right now or is this a minimum/optimized value? - David
+#define STEP_DELAY 1 // Is this value arbitrary right now or is this a minimum/optimized value? - David
 
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
 #define DIST_TOL 0.1
 #define STANDARD_STEP_LENGTH .09
-#define STANDARD_STEP_ANGLE .05
+#define STANDARD_STEP_ANGLE 5
+//Half Step mode
+#define stepsPerRev 400.0 //Number of steps required for one rev of motor
+#define wheelCircumferenceInches 12.7172 //4.048*3.14	//Drive wheel circumference in inches
+#define stepsPerInch  15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
+#define stepsPerDegree 0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
 
 #define LOADING_IR_FREQ 100
 
@@ -68,6 +73,15 @@ unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
 int i;
 unsigned long startTime;
 
+void delay(float millis)
+{
+    unsigned long startT;
+    startT = milliseconds;
+    while(milliseconds - startT <= millis)
+    {
+        //wait
+    }
+}
 
 void pin_config_init()
 {
@@ -206,7 +220,7 @@ float read_dist_simple()
 		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
 	}
 	
-	float averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES );
+	float averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES);
     
 	//return(averageMicrosF);
     return(simpleUltrasonicTime);
@@ -291,14 +305,12 @@ float abs_f(float value)
 
 int go_straight_inches(float inches)
 {
-    #define stepsPerRev 200 //Number of steps required for one rev of motor
-    #define wheelCircumferenceInches 12.76	//Drive wheel circumference in inches
-    static int stepsPerInch = (int)(stepsPerRev/wheelCircumferenceInches);	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
-    static int numberOfSteps;
-    static int stepsTaken = 0;
+    
+    static float numberOfSteps;
+    static float stepsTaken = 0;
     static long lastTime = 0;
 
-    numberOfSteps = (int)(abs_f(inches)*stepsPerInch);	//convert inches to number of steps
+    numberOfSteps = (abs_f(inches)*stepsPerInch)*2.0;	//convert inches to number of steps
 
     if(inches >= 0)
     {
@@ -329,11 +341,8 @@ int go_straight_inches(float inches)
                 _RB15 = 1;  //STEP
             }
             
-            if(_RB15 == 1) //STEP was transitioned HIGH
-            {
-                stepsTaken++;   //Count steps when pulse goes HIGH
-            }
             lastTime = milliseconds;
+            stepsTaken++;
         }
         return(0);  //Need to continue
     }
@@ -345,27 +354,26 @@ int go_straight_inches(float inches)
 }
 
 
-int turn_degrees(int degrees)
+int turn_degrees(float degrees)
 {
-    static int stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
-    static int numberOfSteps;   //Number of steps to reach the desired degrees
-    numberOfSteps = (int)(abs_f(degrees) * stepsPerDegree); // This rounds to lower integer, right? - David
-    static int stepsTaken = 0;
+    //static float stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
+    static float numberOfSteps;   //Number of steps to reach the desired degrees
+    numberOfSteps = (abs_f(degrees) * stepsPerDegree)*2; // This rounds to lower integer, right? - David
+    static float stepsTaken = 0;
     static long lastTime = 0;
-
 
     if(degrees >= 0)    //Turn CW
     {
-        _RB7 = 1;  //set DIR-R
-        _RB8 = 1;  //set DIR-L
+        _RB7 = 1;  //set DIR-R backward
+        _RB8 = 1;  //set DIR-L forward
     }
     else
     {
-        _RB7 = 0;  //set DIR-R
-        _RB8 = 0;  //set DIR-L
+        _RB7 = 0;  //set DIR-R forward
+        _RB8 = 0;  //set DIR-L backward
     }
 
-    if(stepsTaken < numberOfSteps)  //Not enough steps yet...
+    if(stepsTaken <= numberOfSteps)  //Not enough steps yet...
     {
         if((milliseconds - lastTime) <= STEP_DELAY)  //Not yet waited long enough
         {
@@ -382,11 +390,9 @@ int turn_degrees(int degrees)
                 _RB15 = 1;
             }
             //toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
-            if(_RB15 == 1) //Step pin was toggled HIGH
-            {
-                stepsTaken++;   //Count steps when pulse goes HIGH
-            }
+            
             lastTime = milliseconds;
+            stepsTaken++;
         }
         return(0);  //Need to continue
     }
@@ -402,20 +408,21 @@ int find_normal()
 {
 	static int statFlag = 0;
 	static int dirFlag = 0;
-	static float dist1 = 33.3;	//Dist1 = Measure distance
+	static float dist1 = 24.0;	//Dist1 = Measure distance
+    static float dist2;	//Dist2 = Measure distance
 	
-	if(dirFlag == 0)
+	if(dirFlag == 0)    //turn cw
 	{
-		turn_degrees(1);	//Turn 1 degree
+		turn_degrees(5.0);	//Turn
 	}
-	else
+	else    //turn ccw
 	{
-		turn_degrees(-1);
+		turn_degrees(-5.0);
 	}
-	static float dist2;	//Dist2 = Measure distance
-	dist2 = ultra_avg();
 	
-	if((dist2 > dist1) && (statFlag == 0))	//If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
+	dist2 = read_dist_simple();
+	
+	if((dist2 >= dist1) && (statFlag == 0))	//If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
 	{
 		if(dirFlag == 1)	//	Go the other way?
 		{
@@ -427,23 +434,25 @@ int find_normal()
 		}
 		dist1 = dist2;
 		return(0);	//keep searching
-	}		
-	else if(dist1 > dist2)	//Going right direction
+	}
+    
+	else if(dist1 >= dist2)	//Going right direction
 	{
 		//	Continue turning in that direction
-		statFlag = 0;		//	Flag = 1
+		statFlag = 1;		//	Flag = 1
         dist1 = dist2;
 		return(0);	// keep searching
 	}
+    
 	else if((dist2 > dist1) && (statFlag == 1))		//Else if(Dist2 > Dist1 && Flag==1)	//Reached the minimum
 	{
 		if(dirFlag == 0)
 		{
-			turn_degrees(-1*STANDARD_STEP_ANGLE);	//	Go back half a step in angle
+			turn_degrees(-1*STANDARD_STEP_ANGLE/2.0);	//	Go back half a step in angle
 		}
 		else
 		{
-			turn_degrees(STANDARD_STEP_ANGLE);	//	Go back half a step in angle
+			turn_degrees(STANDARD_STEP_ANGLE/2.0);	//	Go back half a step in angle
 		}
 		dist1 = dist2;
         statFlag = 0;	//	Flag = 0
@@ -639,13 +648,18 @@ void ir_finder_analog_setup()
 void _ISR _CNInterrupt(void)    //Interrupt
 {
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
+    
+    int RB2 = _RB2;
+    int RA2 = _RA2;
+    int RA1 = _RA1;
+    
 	
 	timeTemp = microseconds;
     timeTempMillis = milliseconds;
 	
-    if(_RA1 != loaderIrState) //Rear (towards the Loader) state has changed
+    if(RA1 != loaderIrState) //Rear (towards the Loader) state has changed
     {
-        loaderIrState = _RA1;
+        loaderIrState = RA1;
         
         for(i = 0; i < IR_TIMES; i++)
 			{
@@ -654,11 +668,11 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		irTimeValues[IR_TIMES] = (timeTempMillis);
     }
         
-	else if(_RA2 != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
+	else if(RA2 != ultraLastStateB)	//The Rear Ultrasonic Pulse Train Just Changed
 	{
-        ultraLastStateB = _RA2;
+        ultraLastStateB = RA2;
         
-		if(_RA2)	//Rear Ultrasonic Pulse Just Started
+		if(RA2)	//Rear Ultrasonic Pulse Just Started
 		{
 			startTimeUltraB = timeTemp;
 		}
@@ -672,11 +686,11 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		}
 	}
 	
-	else if(_RB2 != ultraLastStateF)	//The Front Ultrasonic Pulse Train Just Changed
+	else if(RB2 != ultraLastStateF)	//The Front Ultrasonic Pulse Train Just Changed
 	{
-        ultraLastStateF = _RB2;
+        ultraLastStateF = RB2;
         
-		if(_RB2)	//Front Ultrasonic Pulse Just Started
+		if(RB2)	//Front Ultrasonic Pulse Just Started
 		{
 			startTimeUltraF = timeTemp;
 		}
