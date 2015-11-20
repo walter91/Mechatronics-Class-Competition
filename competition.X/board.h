@@ -90,24 +90,26 @@ void delay(float millis)
 
 void pin_config_init()
 {
-    _TRISA0 = 1;    //IR FRONT
-    _TRISA1 = 1;    //IR BACK
+	_TRISA5 = 0;	//LOADING SWEEPER, PIN1
+	
+    _TRISA0 = 1;    //IR FRONT, PIN2
+    _TRISA1 = 1;    //IR BACK, PIN3
     
-    _TRISB0 = 0;    //FRONT TRIGGER
-    _TRISB1 = 0;    //BACK TRIGGER
+    _TRISB0 = 0;    //FRONT TRIGGER, PIN4
+    _TRISB1 = 0;    //BACK TRIGGER, PIN5
     
-    _TRISB2 = 1;    //ULTRASONIC ECHO FRONT
-    _TRISA2 = 1;    //ULTRASONIC ECHO BACK
+    _TRISB2 = 1;    //ULTRASONIC ECHO FRONT/ULTRASONIC ANALOG, PIN6
+    _TRISA2 = 1;    //ULTRASONIC ECHO BACK, PIN7
     
-    _TRISA3 = 1;    //LOADING SENSOR INPUT
+    _TRISA3 = 1;    //LOADING SENSOR INPUT, PIN8
     
-    _TRISB7 = 0;    //DIR-RIGHT
-    _TRISB8 = 0;    //DIR-LEFT
-    _TRISB15 = 0;   //STEP
+    _TRISB7 = 0;    //DIR-RIGHT, PIN11
+    _TRISB8 = 0;    //DIR-LEFT, PIN12
+    _TRISB15 = 0;   //STEP, PIN18
     
-    _TRISB9 = 0;    //LOADER TOP
-    _TRISA6 = 0;    //SHOOTER
-    _TRISB12 = 0;   //LOADER BOTTOM
+    _TRISB9 = 0;    //LOADER TOP, PIN13
+    _TRISA6 = 0;    //SHOOTER, PIN14
+    _TRISB12 = 0;   //LOADER BOTTOM, PIN15
 }
 
 
@@ -158,6 +160,39 @@ void analog_ultrasonic_setup()
 	_TRISB2 = 1;	//Pin6 as Input
 	
 }
+
+
+void loading_timer(unsigned long waitTime)
+{
+	static int state = 0;
+	static int returnFlag = 0;
+	
+	switch(state)
+	{
+		case 0:
+			startWaitTime = milliseconds;
+			state = 1;
+			returnFlag = 0;
+			_RA5 = 1;	//turn on loading sweeper, PIN1
+			break;
+		case 1:
+			if((milliseconds - startWaitTime) >= waitTime)	//Timer has expired
+			{
+				state = 0;
+				returnFlag = 1;
+				_RA5 = 0;	//turn off loading sweeper, PIN1
+			}
+			else
+			{
+				//don't change state
+				returnFlag = 0;
+			}		
+			break;
+	}
+	return(returnFlag);
+}
+
+
 
 
 float analog_ultra_inches()
