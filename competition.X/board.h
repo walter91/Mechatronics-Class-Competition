@@ -512,12 +512,12 @@ int find_normal()
 		
 	switch(normalState)
 	{
-		case 0:
+		case 0:	//Take initial reading...
 			dist1 = analog_ultra_inches();	//only make reading once...
 			state = 1;
 			break;
 		
-		case 1:
+		case 1:	//Turn... then Measure & Determine Direction...
 			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
 			{
 				dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
@@ -536,19 +536,19 @@ int find_normal()
 			}
 			break;
 		
-		case 2:
+		case 2:	//Turn...then Measure & Determine if normal...
 			if(dirFlag = 1)	//CCW rotation, correct direction
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
 				{
-					dist2 = analog_ultra_inches();
+					dist2 = analog_ultra_inches();	//take a new measurement
 					if(dist2 >= dist1)	//we're getting farther again...
 					{
-						state = 3;
+						state = 3;	//normal, move on...
 					}
 					else
 					{
-						state = 2;
+						state = 2;	//not normal, keep turning
 					}
 					dist1 = dist2;	//update dist1
 				}
@@ -564,11 +564,11 @@ int find_normal()
 					dist2 = analog_ultra_inches();
 					if(dist2 >= dist1)	//we're getting farther again...
 					{
-						state = 3;
+						state = 3;	//normal, move on...
 					}
 					else
 					{
-						state = 2;
+						state = 2;	//not normal, keep turning
 					}
 					dist1 = dist2;	//update dist1
 				}
@@ -579,21 +579,21 @@ int find_normal()
 			}
 			break;
 		
-		case 3:
+		case 3:	//Turn back to estimated "more" normal...
 			if(dirFlag = 1)	//Turn back CW (previously rotated CCW)
 			{
-				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back...
+				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
 				{
-					state = 0;
-					returnFlag = 1;
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
 				}
 			}
 			else if(dirFlag = 0)	//Turn back CCW (previously rotated CW)
 			{
-				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back...
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
 				{
-					state = 0;
-					returnFlag = 1;
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
 				}
 			}
 			break;
