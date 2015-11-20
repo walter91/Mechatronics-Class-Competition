@@ -505,6 +505,107 @@ int turn_degrees(float degrees)
 
 int find_normal()
 {
+	static int state = 0;
+	static float dist1;
+	static float dist2;
+	static int dirFlag = 0;	//CW rotation initially...
+	int returnFlag = 0;
+		
+	switch(normalState)
+	{
+		case 0:
+			dist1 = analog_ultra_inches();	//only make reading once...
+			state = 1;
+			break;
+		
+		case 1:
+			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
+			{
+				dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
+				
+				if(dist2 >= dist1)	//turned wrong direction
+				{
+					dirFlag = 1;	//CCW rotation
+				}
+				else
+				{
+					dirFlag = 0;	//CW rotation
+				}
+				dist1 = dist2;	//update dist1
+				
+				state = 2;
+			}
+			break;
+		
+		case 2:
+			if(dirFlag = 1)	//CCW rotation, correct direction
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
+				{
+					dist2 = analog_ultra_inches();
+					if(dist2 >= dist1)	//we're getting farther again...
+					{
+						state = 3;
+					}
+					else
+					{
+						state = 2;
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			else if(dirFlag = 0)	//CW rotation, correct direction
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE))
+				{
+					dist2 = analog_ultra_inches();
+					if(dist2 >= dist1)	//we're getting farther again...
+					{
+						state = 3;
+					}
+					else
+					{
+						state = 2;
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			break;
+		
+		case 3:
+			if(dirFlag = 1)	//Turn back CW (previously rotated CCW)
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back...
+				{
+					state = 0;
+					returnFlag = 1;
+				}
+			}
+			else if(dirFlag = 0)	//Turn back CCW (previously rotated CW)
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back...
+				{
+					state = 0;
+					returnFlag = 1;
+				}
+			}
+			break;
+	}
+
+	return(returnFlag);		
+}
+
+/*
+int find_normal()
+{
 	static int statFlag = 0;
 	static int dirFlag = 0;
 	//static float dist1 = 24.0;	//Dist1 = Measure distance
@@ -561,6 +662,7 @@ int find_normal()
 		        
 	}
 }
+*/
 
 
 int find_24()
