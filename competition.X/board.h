@@ -33,6 +33,9 @@
 #define stepsPerInch  15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
 #define stepsPerDegree 0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
 
+#define INCH_PER_VOLT 0.0465
+#define INCH_OFFSET .1955
+
 #define LOADING_IR_FREQ 100
 
 #define INCHES_CORNER_TO_CENTER 33.3
@@ -40,6 +43,8 @@
 #define IR_FOUND_THRESH 70  //Percent of full voltage
 
 #define INCH_PER_MIRCOSECONDS .00676
+
+
 
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 unsigned long microseconds = 0;	//Will overflow after 71 minutes
@@ -105,6 +110,65 @@ void pin_config_init()
     _TRISB12 = 0;   //LOADER BOTTOM
 }
 
+
+void analog_ultrasonic_setup()
+{  
+    //------------------------------------------------------------------------
+    // A /D Configuration Function
+    //------------------------------------------------------------------------
+    
+    // AD1CHS register
+    _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+
+    // AD1CON1 register
+    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode?
+    _MODE12 = 1;        // AD1CON1<10> -- 12-bit
+    _FORM = 0b00;       // AD1CON1<9:8> -- Output format, pg. 211
+    _SSRC = 0b0111;     // AD1CON1<7:4> -- Auto conversion (internal counter)
+    _ASAM = 1;          // AD1CON1<2> -- Auto sampling
+
+    // AD1CSSL registers
+    AD1CSSL = 0b0000000000010011;   // AD1CSSL<15:0> -- Select lower channels to scan, turn on AN0 and AN1 and AN4
+    AD1CSSH = 0x0000;               // AD1CSSH<15:0> -- Select upper channels to scan, NOT USED!
+
+    // AD1CON2 register, see pg. 212
+    _PVCFG = 0b00;      // AD1CON2<15:14> -- Use VDD as positive ref voltage
+    _NVCFG = 0;         // AD1CON2<13> -- Use VSS as negative ref voltage
+    _BUFREGEN = 1;      // AD1CON2<11> -- Results stored using channel indexed
+                        // mode -- AN1 result is stored in ADC1BUF1, AN2 result
+                        // is stored in ADC1BUF2, etc.
+    _CSCNA = 1;         // AD1CON2<10> -- Scans inputs specified in AD1CSSx
+                        // registers instead of using channels specified
+                        // by CH0SA bits in AD1CHS register
+    _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
+    _SMPI = 0b00001;    // AD1CON2<6:2> -- Interrupts at the conversion for
+                        // every other sample
+
+    // AD1CON3 register
+    _ADRC = 0;              // AD1CON3<15> -- Use system clock
+    _SAMC = 0x00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0x00111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+
+    ANSA = 1;       //Turn on analog for port A
+	ANSB = 1;		//Turn on analog for port B
+	
+    _TRISA0 = 1;    //Pin2 as Input
+    _TRISA1 = 1;    //Pin3 as Input
+	_TRISB2 = 1;	//Pin6 as Input
+	
+}
+
+
+float analog_ultra_inches()
+{
+	static float ultraVolts;
+	ultraVolts = (ADC1BUF4/4095)*3.3;	//Read analog-to-digital converter and save in volts
+	
+	return(ultraVolts*INCH_PER_VOLT + INCH_);
+}
+
+float dist1 = analog_ultra_inches();	//This sets the initial distance...
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
@@ -408,7 +472,7 @@ int find_normal()
 {
 	static int statFlag = 0;
 	static int dirFlag = 0;
-	static float dist1 = 24.0;	//Dist1 = Measure distance
+	//static float dist1 = 24.0;	//Dist1 = Measure distance
     static float dist2;	//Dist2 = Measure distance
 	
 	if(dirFlag == 0)    //turn cw
@@ -420,7 +484,9 @@ int find_normal()
 		turn_degrees(-5.0);
 	}
 	
-	dist2 = read_dist_simple();
+	
+	//dist2 = read_dist_simple();
+	dist2 = analog_ultra_inches();
 	
 	if((dist2 >= dist1) && (statFlag == 0))	//If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
 	{
