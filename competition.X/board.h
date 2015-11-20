@@ -203,7 +203,6 @@ float analog_ultra_inches()
 	return(ultraVolts*INCH_PER_VOLT + INCH_);
 }
 
-float dist1 = analog_ultra_inches();	//This sets the initial distance...
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
