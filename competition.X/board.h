@@ -184,14 +184,14 @@ void loading_timer(unsigned long waitTime)
 			startWaitTime = milliseconds;
 			state = 1;
 			returnFlag = 0;
-			_RB1 = 1;	//turn on loading sweeper, PIN1
+			_LATB1 = 1;	//turn on loading sweeper, PIN1
 			break;
 		case 1:
 			if((milliseconds - startWaitTime) >= waitTime)	//Timer has expired
 			{
 				state = 0;
 				returnFlag = 1;
-				_RB1 = 0;	//turn off loading sweeper, PIN1
+				_LATB1 = 0;	//turn off loading sweeper, PIN1
 			}
 			else
 			{
@@ -466,14 +466,14 @@ int go_straight_inches(float inches)
 
     if(inches >= 0)
     {
-        _RB7 = 0;  //set direction pins, both forward, DIR-R
-        _RB8 = 1;  //set direction pins, both forward, DIR-L
+        _LATB7 = 0;  //set direction pins, both forward, DIR-R
+        _LATB8 = 1;  //set direction pins, both forward, DIR-L
     }
 
     else
     {
-        _RB7 = 1;  //set direction pins, both backward, DIR-R
-        _RB8 = 0;  //set direction pins, both backward, DIR-L
+        _LATB7 = 1;  //set direction pins, both backward, DIR-R
+        _LATB8 = 0;  //set direction pins, both backward, DIR-L
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
@@ -490,7 +490,7 @@ int go_straight_inches(float inches)
             }
             else
             {
-                _RB15 = 1;  //STEP
+                _LATB15 = 1;  //STEP
             }
             
             lastTime = milliseconds;
@@ -517,13 +517,13 @@ int turn_degrees(float degrees)
 
     if(degrees >= 0)    //Turn CW
     {
-        _RB7 = 1;  //set DIR-R backward
-        _RB8 = 1;  //set DIR-L forward
+        _LATB7 = 1;  //set DIR-R backward
+        _LATB8 = 1;  //set DIR-L forward
     }
     else
     {
-        _RB7 = 0;  //set DIR-R forward
-        _RB8 = 0;  //set DIR-L backward
+        _LATB7 = 0;  //set DIR-R forward
+        _LATB8 = 0;  //set DIR-L backward
     }
 
     if(stepsTaken <= numberOfSteps)  //Not enough steps yet...
@@ -536,11 +536,11 @@ int turn_degrees(float degrees)
         {
             if(_RB15)
             {
-                _RB15 = 0;
+                _LATB15 = 0;
             }
             else
             {
-                _RB15 = 1;
+                _LATB15 = 1;
             }
             //toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
             
