@@ -104,7 +104,7 @@ void pin_config_init()
     _TRISA1 = 1;    //IR BACK, PIN3
     
     _TRISB0 = 0;    //FRONT TRIGGER, PIN4
-    _TRISB1 = 0;    //BACK TRIGGER, PIN5
+    _TRISB1 = 0;    //LOADING WIPER, PIN5
     
     _TRISB2 = 1;    //ULTRASONIC ECHO FRONT/ULTRASONIC ANALOG, PIN6
     _TRISA2 = 1;    //ULTRASONIC ECHO BACK, PIN7
@@ -184,14 +184,14 @@ void loading_timer(unsigned long waitTime)
 			startWaitTime = milliseconds;
 			state = 1;
 			returnFlag = 0;
-			_LATB1 = 1;	//turn on loading sweeper, PIN1
+			_LATB1 = 1;	//turn on loading sweeper, PIN5
 			break;
 		case 1:
 			if((milliseconds - startWaitTime) >= waitTime)	//Timer has expired
 			{
 				state = 0;
 				returnFlag = 1;
-				_LATB1 = 0;	//turn off loading sweeper, PIN1
+				_LATB1 = 0;	//turn off loading sweeper, PIN5
 			}
 			else
 			{
