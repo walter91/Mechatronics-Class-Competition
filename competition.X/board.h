@@ -91,6 +91,8 @@ void delay(float millis)
     }
 }
 
+
+
 void pin_config_init()
 {
 	//_TRISA5 = 0;	//LOADING SWEEPER, PIN1
@@ -114,6 +116,7 @@ void pin_config_init()
     _TRISA6 = 0;    //SHOOTER, PIN14
     _TRISB12 = 0;   //LOADER BOTTOM, PIN15
 }
+
 
 
 void analog_ultrasonic_setup()
@@ -165,6 +168,7 @@ void analog_ultrasonic_setup()
 }
 
 
+
 void loading_timer(unsigned long waitTime)
 {
 	static int state = 0;
@@ -198,19 +202,17 @@ void loading_timer(unsigned long waitTime)
 
 
 
-
 float analog_ultra_inches()
 {
 	float ultraVolts;
 	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
-	
-    //#define INCH_PER_VOLT 0.0465
-    //#define INCH_OFFSET .1955
     
-	//return(ultraVolts*INCH_PER_VOLT + INCH_OFFSET);
-    return(ultraVolts*20.0-3.25);
-    //return(15.0);
+	float inches;
+	inches = ultraVolts*20.0-3.25
+	
+    return(inches);
 }
+
 
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
@@ -230,6 +232,7 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 }
 
 
+
 void timing_interrupt_config()
 {
 	_TON = 1;	//Turn on timer 1, for general use
@@ -243,6 +246,7 @@ void timing_interrupt_config()
     _T1IF = 0;      // Clear interrupt flag
     PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
 }
+
 
 
 float ultra_avg()
@@ -280,6 +284,7 @@ float ultra_avg()
     
     return(distance);
 }
+
 
 
 float read_dist()
@@ -530,7 +535,7 @@ int find_normal()
 	switch(state)
 	{
 		case 0:	//Take initial reading...
-			dist1 = analog_ultra_inches();	//only make reading once...
+			dist1 = ultra_avg();;	//only make reading once...
 			state = 1;
 			break;
 		

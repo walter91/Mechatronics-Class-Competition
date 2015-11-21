@@ -16,6 +16,7 @@ int shottingState = 0;
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
 state STATE = findCenter;	//Default state initialization
 
+/*
 void config_pwm_14()
 {
     //------------------------------------------------------------------
@@ -46,17 +47,18 @@ void config_pwm_14()
     // Turn on Timer2
     T2CONbits.TON = 1;
 }
-
+*/
 
 int main()
 {	
-    config_pwm_14();
+    //config_pwm_14();
     
     pin_config_init();
     timing_interrupt_config();
-	ultrasonic_setup();
-    
-    ANSB = 0;     
+	//ultrasonic_setup();
+    analog_ultrasonic_setup();
+	ir_finder_analog_setup();
+   
     
 	while(1)
 	{

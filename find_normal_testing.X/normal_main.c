@@ -76,6 +76,5 @@ int main()
                STATE = 0;
                 break;
        }
-                 
     }
 }

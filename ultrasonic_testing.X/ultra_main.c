@@ -140,16 +140,7 @@ int main()
     while(1)
     {
         
-        //OC1R = ADC1BUF4;
-        //OC1R = .5*PR2;
         
-        
-        
-        //OC1R = .5*PR2;
-        OC2R = (analog_ultra_inches()/30.0)*PR2;    //Should output PWM with duty cycle from 0%-100% for 0"-48"
-        //OC2R = (ADC1BUF0/4095.0)*PR2;    //Should output PWM with duty cycle from 0%-100% for 0"-48"
-        //OC2R = .4*PR2;
-        startTime = milliseconds;
         
         
     }
