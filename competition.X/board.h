@@ -13,6 +13,8 @@
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
+_FICD(ICS_PGx3);
+
 //Values
 #define LEFT_FORWARD 1
 #define RIGHT_FORWARD 0
@@ -24,9 +26,10 @@
 
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
-#define DIST_TOL 0.1
-#define STANDARD_STEP_LENGTH .09
+#define DIST_TOL 0.25
+#define STANDARD_STEP_LENGTH .2
 #define STANDARD_STEP_ANGLE 5
+#define LARGE_STEP_ANGLE 10
 //Half Step mode
 #define stepsPerRev 400.0 //Number of steps required for one rev of motor
 #define wheelCircumferenceInches 12.7172 //4.048*3.14	//Drive wheel circumference in inches
@@ -90,7 +93,7 @@ void delay(float millis)
 
 void pin_config_init()
 {
-	_TRISA5 = 0;	//LOADING SWEEPER, PIN1
+	//_TRISA5 = 0;	//LOADING SWEEPER, PIN1
 	
     _TRISA0 = 1;    //IR FRONT, PIN2
     _TRISA1 = 1;    //IR BACK, PIN3
@@ -166,6 +169,7 @@ void loading_timer(unsigned long waitTime)
 {
 	static int state = 0;
 	static int returnFlag = 0;
+    static unsigned long startWaitTime = 0;
 	
 	switch(state)
 	{
@@ -197,10 +201,15 @@ void loading_timer(unsigned long waitTime)
 
 float analog_ultra_inches()
 {
-	static float ultraVolts;
-	ultraVolts = (ADC1BUF4/4095)*3.3;	//Read analog-to-digital converter and save in volts
+	float ultraVolts;
+	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
 	
-	return(ultraVolts*INCH_PER_VOLT + INCH_);
+    //#define INCH_PER_VOLT 0.0465
+    //#define INCH_OFFSET .1955
+    
+	//return(ultraVolts*INCH_PER_VOLT + INCH_OFFSET);
+    return(ultraVolts*20.0-3.25);
+    //return(15.0);
 }
 
 
@@ -239,33 +248,34 @@ void timing_interrupt_config()
 float ultra_avg()
 {
     static unsigned long averageMicrosF;
-	static unsigned long averageMicrosB;
+	//static unsigned long averageMicrosB;
 	static unsigned long oldAverageMicrosF;
-	static unsigned long oldAverageMicrosB;
+	//static unsigned long oldAverageMicrosB;
 	static float distance;
 	
 	static unsigned long sumMicrosF;
-	static unsigned long sumMicrosB;
+	//static unsigned long sumMicrosB;
 	
 	sumMicrosF = 0;
-	sumMicrosB = 0;
+	//sumMicrosB = 0;
 	
 	for(i = 0; i <= ULTRASONIC_VALUES; i++)
 	{
 		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
-		sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
+		//sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
 	}
 	
 	sumMicrosF = sumMicrosF + oldAverageMicrosF;
-	sumMicrosB = sumMicrosB + oldAverageMicrosB;
+	//sumMicrosB = sumMicrosB + oldAverageMicrosB;
 	
 	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
-	averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
+	//averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
 	
 	oldAverageMicrosF = averageMicrosF;
-	oldAverageMicrosB = averageMicrosB;
+	//oldAverageMicrosB = averageMicrosB;
     
-    distance  =  (averageMicrosF+averageMicrosB)/2.0;
+    distance = averageMicrosF;
+    //distance  =  (averageMicrosF+averageMicrosB)/2.0;
     
     
     return(distance);
@@ -510,7 +520,7 @@ int find_normal()
 	static int dirFlag = 0;	//CW rotation initially...
 	int returnFlag = 0;
 		
-	switch(normalState)
+	switch(state)
 	{
 		case 0:	//Take initial reading...
 			dist1 = analog_ultra_inches();	//only make reading once...
@@ -520,7 +530,9 @@ int find_normal()
 		case 1:	//Turn... then Measure & Determine Direction...
 			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
 			{
-				dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
+                dist2 = ultra_avg();
+				//dist2 = read_dist_simple();
+                //dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
 				
 				if(dist2 >= dist1)	//turned wrong direction
 				{
@@ -541,7 +553,9 @@ int find_normal()
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
 				{
-					dist2 = analog_ultra_inches();	//take a new measurement
+                    dist2 = ultra_avg();
+					//dist2 = read_dist_simple();
+                    //dist2 = analog_ultra_inches();	//take a new measurement
 					if(dist2 >= dist1)	//we're getting farther again...
 					{
 						state = 3;	//normal, move on...
@@ -561,7 +575,9 @@ int find_normal()
 			{
 				if(turn_degrees(STANDARD_STEP_ANGLE))
 				{
-					dist2 = analog_ultra_inches();
+                    dist2 = ultra_avg();
+					//dist2 = read_dist_simple();
+                    //dist2 = analog_ultra_inches();
 					if(dist2 >= dist1)	//we're getting farther again...
 					{
 						state = 3;	//normal, move on...
@@ -601,6 +617,112 @@ int find_normal()
 
 	return(returnFlag);		
 }
+
+
+int find_normal_analog()
+{
+	static int state = 0;
+	static float dist1;
+	static float dist2;
+	static int dirFlag = 0;	//CW rotation initially...
+	int returnFlag = 0;
+		
+	switch(state)
+	{
+		case 0:	//Take initial reading...
+			dist1 = analog_ultra_inches();	//only make reading once...
+			state = 1;
+			break;
+		
+		case 1:	//Turn... then Measure & Determine Direction...
+			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
+			{
+				//dist2 = read_dist_simple();
+                dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
+				
+				if(dist2 >= dist1)	//turned wrong direction
+				{
+					dirFlag = 1;	//CCW rotation
+				}
+				else
+				{
+					dirFlag = 0;	//CW rotation
+				}
+				dist1 = dist2;	//update dist1
+				
+				state = 2;
+			}
+			break;
+		
+		case 2:	//Turn...then Measure & Determine if normal...
+			if(dirFlag = 1)	//CCW rotation, correct direction
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
+				{
+					//dist2 = read_dist_simple();
+                    dist2 = analog_ultra_inches();	//take a new measurement
+					if(dist2 >= dist1)	//we're getting farther again...
+					{
+						state = 3;	//normal, move on...
+					}
+					else
+					{
+						state = 2;	//not normal, keep turning
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			else if(dirFlag = 0)	//CW rotation, correct direction
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE))
+				{
+					//dist2 = read_dist_simple();
+                    dist2 = analog_ultra_inches();
+					if(dist2 >= dist1)	//we're getting farther again...
+					{
+						state = 3;	//normal, move on...
+					}
+					else
+					{
+						state = 2;	//not normal, keep turning
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			break;
+		
+		case 3:	//Turn back to estimated "more" normal...
+			if(dirFlag = 1)	//Turn back CW (previously rotated CCW)
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
+				{
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
+				}
+			}
+			else if(dirFlag = 0)	//Turn back CCW (previously rotated CW)
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
+				{
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
+				}
+			}
+			break;
+	}
+
+	return(returnFlag);		
+}
+
+
 
 /*
 int find_normal()
@@ -666,9 +788,9 @@ int find_normal()
 
 int find_24()
 {
-	static float error;
+	float error;
 		
-	error = (INCH_TO_WALL -  read_dist());	//Error = (24 - Dist)
+	error = (INCH_TO_WALL -  analog_ultra_inches());	//Error = (24 - Dist)
 	//TO DO: write a read_dist() function. This should return a float which is a filtered value representing the distance from the wall
 		
 	if(abs_f(error) < DIST_TOL)	//We are there...
@@ -690,6 +812,39 @@ int find_24()
 		return(0);	//Keep looking for center
 	}
 }
+
+
+
+int find_24_analog()
+{
+	static float error;
+		
+	error = (INCH_TO_WALL -  analog_ultra_inches());	//Error = (24 - Dist)
+	//TO DO: write a read_dist() function. This should return a float which is a filtered value representing the distance from the wall
+		
+	if(abs_f(error) < DIST_TOL)	//We are there...
+	{
+		return(1);	//Center Found
+	}
+	
+	else	//Change position...
+	{
+		if(error > 0)	//Positive error, move backward
+		{
+			go_straight_inches(-1*STANDARD_STEP_LENGTH); // If our DIST_TOL is 0.1 in, how can we reach it taking 0.5 in steps? Reduce to 0.1 in, maybe? - David
+		}
+		else	//Negative error, move forward
+		{
+			go_straight_inches(STANDARD_STEP_LENGTH);
+		}
+		
+		return(0);	//Keep looking for center
+	}
+}
+
+
+
+
 
 
 void ultrasonic_setup()
@@ -820,7 +975,7 @@ void ir_finder_analog_setup()
     _ASAM = 1;          // AD1CON1<2> -- Auto sampling
 
     // AD1CSSL registers
-    AD1CSSL = 0b0000000000000011;   // AD1CSSL<15:0> -- Select lower channels to scan, turn on AN0 and AN1
+    AD1CSSL = 0XFFFF;   // AD1CSSL<15:0> -- Select lower channels to scan, turn on AN0 and AN1
     AD1CSSH = 0x0000;               // AD1CSSH<15:0> -- Select upper channels to scan, NOT USED!
 
     // AD1CON2 register, see pg. 212

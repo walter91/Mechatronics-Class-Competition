@@ -12,7 +12,7 @@ int main()
     timing_interrupt_config();
     
     //Wait to move hand from switch
-        delay(15000);
+        delay(1000);
         
     while(1)
     {

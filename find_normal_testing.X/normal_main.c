@@ -43,10 +43,21 @@ int main()
 {
     pin_config_init();
     timing_interrupt_config();
-    ultrasonic_setup();
+    ir_finder_analog_setup();
+    analog_ultrasonic_setup();
+    
+    //analog_ultrasonic_setup();
+    //ultrasonic_setup();
     //config_pwm_14();
     
+    _ANSA0;
+    ANSB = 1;   //Digital buffer is active
     
+    //_TRISA0 = 1;
+    _TRISB2 = 1;
+    _TRISA2 = 1;
+    _TRISA0 = 1;
+    _TRISA1 = 1;
     while(1)
     {
         
@@ -55,13 +66,13 @@ int main()
         switch(STATE)
        {
             case 0:
-                if(find_normal())
+                if(find_24())//if(find_normal_analog())
                 {
                     STATE = 1;
                 }
                 break;
            case 1:
-               delay(5000);
+               delay(2500);
                STATE = 0;
                 break;
        }
