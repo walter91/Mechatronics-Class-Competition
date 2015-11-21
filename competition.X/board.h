@@ -52,6 +52,7 @@ _FICD(ICS_PGx3);
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 unsigned long microseconds = 0;	//Will overflow after 71 minutes
 unsigned long countTimer = 0;
+unsigned long countTimerDist = 0;
 
 unsigned long simpleUltrasonicTime = 0;
 
@@ -68,6 +69,8 @@ int ultraLastStateB;
 int ultraLastStateF;
 
 int targetsFound = 0b000;
+
+float ultraVoltsInt[10] = {0,0,0,0,0,0,0,0,0,0};	//Interrupt driven Analog Ultrasonic Values
 
 int loaderIrState;
 #define IR_TIMES 3
@@ -181,14 +184,14 @@ void loading_timer(unsigned long waitTime)
 			startWaitTime = milliseconds;
 			state = 1;
 			returnFlag = 0;
-			_RA5 = 1;	//turn on loading sweeper, PIN1
+			_RB1 = 1;	//turn on loading sweeper, PIN1
 			break;
 		case 1:
 			if((milliseconds - startWaitTime) >= waitTime)	//Timer has expired
 			{
 				state = 0;
 				returnFlag = 1;
-				_RA5 = 0;	//turn off loading sweeper, PIN1
+				_RB1 = 0;	//turn off loading sweeper, PIN1
 			}
 			else
 			{
@@ -208,11 +211,30 @@ float analog_ultra_inches()
 	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
     
 	float inches;
-	inches = ultraVolts*20.0-3.25
+	inches = ultraVolts*20.0-3.25;
 	
     return(inches);
 }
 
+
+
+float average_inches_int()	//This will return the average distance from the last 250 milliseconds...
+{
+	static float sum;
+	sum = 0;
+	
+	for(i=0; i < =9; i++)	//For 0-9 (all 10)
+	{
+		sum = sum + ultraVoltsInt[i];
+	}
+	
+	static float average;
+	average = (sum/10.0);
+	
+	inches = average*20.0-3.25;
+	
+	return(inches);
+}
 
 
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
@@ -228,6 +250,18 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
     {
 		milliseconds++;
 		countTimer = 0;
+		countTimerDist++;
+	}
+	if(countTimerDist >= 25)
+	{
+		for(i=0; i < 9; i++)	//For i = 0-8 (first 9)
+		{
+			ultraVoltsInt[i] = ultraVoltsInt[i+1];
+		}
+		
+		ultraVoltsInt[9] = (ADC1BUF0/4095.0)*3.3;	//For #9 (tenth) Read analog-to-digital converter and save in volts
+
+		countTimerDist = 0;	//reset timer count...
 	}
 }
 
