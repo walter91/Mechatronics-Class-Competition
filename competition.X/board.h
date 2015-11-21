@@ -172,7 +172,7 @@ void analog_ultrasonic_setup()
 
 
 
-void loading_timer(unsigned long waitTime)
+int loading_timer(unsigned long waitTime)
 {
 	static int state = 0;
 	static int returnFlag = 0;
@@ -223,7 +223,7 @@ float average_inches_int()	//This will return the average distance from the last
 	static float sum;
 	sum = 0;
 	
-	for(i=0; i < =9; i++)	//For 0-9 (all 10)
+	for(i=0; i <=9; i++)	//For 0-9 (all 10)
 	{
 		sum = sum + ultraVoltsInt[i];
 	}
@@ -231,6 +231,7 @@ float average_inches_int()	//This will return the average distance from the last
 	static float average;
 	average = (sum/10.0);
 	
+    float inches;
 	inches = average*20.0-3.25;
 	
 	return(inches);
@@ -834,7 +835,7 @@ int find_normal()
 
 
 
-int find_inches(float refence)
+int find_inches(float reference)
 {
 	float error;
 		
