@@ -356,6 +356,7 @@ float ir_front_percent()
 }
 
 
+
 float ir_back_percent()
 {
     //return values between 0-100 for percent of IR seen
@@ -376,6 +377,7 @@ float ir_back_percent()
 }
 
 
+
 int ir_front_found()
 {
     if((-0.0298*ADC1BUF0 + 122.1) >= IR_FOUND_THRESH)
@@ -387,6 +389,7 @@ int ir_front_found()
         return(0);
     }
 }
+
 
 
 int ir_back_found()
@@ -402,6 +405,7 @@ int ir_back_found()
 }
 
 
+
 float abs_f(float value)
 {
 	if(value >= 0)
@@ -409,6 +413,7 @@ float abs_f(float value)
 	else
 		return(-1.0*value);
 }
+
 
 
 int go_straight_inches(float inches)
@@ -462,6 +467,7 @@ int go_straight_inches(float inches)
 }
 
 
+
 int turn_degrees(float degrees)
 {
     //static float stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
@@ -510,6 +516,7 @@ int turn_degrees(float degrees)
         return(1);  //We're done...
     }
 }
+
 
 
 int find_normal()
@@ -617,6 +624,7 @@ int find_normal()
 
 	return(returnFlag);		
 }
+
 
 
 int find_normal_analog()
@@ -786,12 +794,40 @@ int find_normal()
 */
 
 
+
+int find_inches(float refence)
+{
+	float error;
+		
+	error = (reference -  analog_ultra_inches());	//Error = (24 - Dist)
+		
+	if(abs_f(error) < DIST_TOL)	//We are there...
+	{
+		return(1);	//Center Found
+	}
+	
+	else	//Change position...
+	{
+		if(error > 0)	//Positive error, move backward
+		{
+			go_straight_inches(-1*STANDARD_STEP_LENGTH); // If our DIST_TOL is 0.1 in, how can we reach it taking 0.5 in steps? Reduce to 0.1 in, maybe? - David
+		}
+		else	//Negative error, move forward
+		{
+			go_straight_inches(STANDARD_STEP_LENGTH);
+		}
+		
+		return(0);	//Keep looking for center
+	}
+}
+
+
+
 int find_24()
 {
 	float error;
 		
 	error = (INCH_TO_WALL -  analog_ultra_inches());	//Error = (24 - Dist)
-	//TO DO: write a read_dist() function. This should return a float which is a filtered value representing the distance from the wall
 		
 	if(abs_f(error) < DIST_TOL)	//We are there...
 	{
@@ -841,9 +877,6 @@ int find_24_analog()
 		return(0);	//Keep looking for center
 	}
 }
-
-
-
 
 
 
@@ -924,6 +957,7 @@ void ultrasonic_setup()
 }
 
 
+
 void loader_finder_digital_setup()
 {
     //TODO: Add all configurations needed to change pin to digital input...
@@ -947,6 +981,7 @@ void loader_finder_digital_setup()
     _TRISA0 = 1;    //Pin2 as Input
     _TRISA1 = 1;    //Pin3 as Input
 }
+
 
 
 void ir_finder_analog_setup()
@@ -1000,6 +1035,7 @@ void ir_finder_analog_setup()
     _TRISA0 = 1;    //Pin2 as Input
     _TRISA1 = 1;    //Pin3 as Input
 }
+
 
 
 void _ISR _CNInterrupt(void)    //Interrupt
