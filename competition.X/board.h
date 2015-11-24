@@ -27,7 +27,7 @@ _FICD(ICS_PGx3);
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
 #define DIST_TOL 0.25
-#define STANDARD_STEP_LENGTH .2
+#define STANDARD_STEP_LENGTH .25
 #define STANDARD_STEP_ANGLE 5
 #define LARGE_STEP_ANGLE 10
 //Half Step mode
@@ -71,6 +71,7 @@ int ultraLastStateF;
 int targetsFound = 0b000;
 
 float ultraVoltsInt[10] = {0,0,0,0,0,0,0,0,0,0};	//Interrupt driven Analog Ultrasonic Values
+float ultraInchesAvg[10] = {0,0,0,0,0,0,0,0,0,0};
 
 int loaderIrState;
 #define IR_TIMES 3
@@ -207,13 +208,29 @@ int loading_timer(unsigned long waitTime)
 
 float analog_ultra_inches()
 {
-	float ultraVolts;
+	static float ultraVolts;
 	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
     
-	float inches;
-	inches = ultraVolts*20.0-3.25;
+    for(i=0; i <10; i++)	//For 0-9 (all 10)
+	{
+		ultraInchesAvg[i] = ultraInchesAvg[i+1];
+	}
+    
+	//static float inches;
+	ultraInchesAvg[10] = ultraVolts*20.825+.915;
+    
+    static float sum;
+	sum = 0;
 	
-    return(inches);
+	for(i=0; i <=10; i++)	//For 0-9 (all 10)
+	{
+		sum = sum + ultraInchesAvg[i];
+	}
+    
+    static float averageInches;
+    averageInches = sum/10.0;
+	
+    return(averageInches);
 }
 
 
@@ -228,11 +245,12 @@ float average_inches_int()	//This will return the average distance from the last
 		sum = sum + ultraVoltsInt[i];
 	}
 	
-	static float average;
-	average = (sum/10.0);
+	static float averageVolts;
+	averageVolts = (sum/10.0);
+
 	
     float inches;
-	inches = average*20.0-3.25;
+	inches = averageVolts*20.0-3.25;
 	
 	return(inches);
 }
@@ -242,18 +260,18 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
     // Remember to clear the Timer1 interrupt flag when this ISR is entered.
     _T1IF = 0; // Clear interrupt flag
-    
-	microseconds = microseconds + 100;
+    milliseconds++;
+	//microseconds = microseconds + 100;
 	
-	countTimer++;
+	//countTimer++;
 	
-	if(countTimer >= 10)
-    {
-		milliseconds++;
-		countTimer = 0;
-		countTimerDist++;
-	}
-	if(countTimerDist >= 25)
+//	if(countTimer >= 10)
+//    {
+//		milliseconds++;
+//		countTimer = 0;
+//		//countTimerDist++;
+//	}
+	/*if(countTimerDist >= 200)
 	{
 		for(i=0; i < 9; i++)	//For i = 0-8 (first 9)
 		{
@@ -263,7 +281,7 @@ void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 		ultraVoltsInt[9] = (ADC1BUF0/4095.0)*3.3;	//For #9 (tenth) Read analog-to-digital converter and save in volts
 
 		countTimerDist = 0;	//reset timer count...
-	}
+	}*/
 }
 
 
@@ -279,7 +297,7 @@ void timing_interrupt_config()
     _T1IP = 5;      // Select interrupt priority
     _T1IE = 1;      // Enable interrupt
     _T1IF = 0;      // Clear interrupt flag
-    PR1 = 50;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
+    PR1 = 500;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
 }
 
 
@@ -457,24 +475,23 @@ float abs_f(float value)
 
 
 int go_straight_inches(float inches)
-{
-    
+{    
     static float numberOfSteps;
     static float stepsTaken = 0;
-    static long lastTime = 0;
+    static unsigned long lastTime = 0;
 
     numberOfSteps = (abs_f(inches)*stepsPerInch)*2.0;	//convert inches to number of steps
 
     if(inches >= 0)
     {
-        _LATB7 = 0;  //set direction pins, both forward, DIR-R
-        _LATB8 = 1;  //set direction pins, both forward, DIR-L
+        _RB7 = 0;  //set direction pins, both forward, DIR-R
+        _RB8 = 1;  //set direction pins, both forward, DIR-L
     }
 
     else
     {
-        _LATB7 = 1;  //set direction pins, both backward, DIR-R
-        _LATB8 = 0;  //set direction pins, both backward, DIR-L
+        _RB7 = 1;  //set direction pins, both backward, DIR-R
+        _RB8 = 0;  //set direction pins, both backward, DIR-L
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
@@ -491,7 +508,7 @@ int go_straight_inches(float inches)
             }
             else
             {
-                _LATB15 = 1;  //STEP
+                _RB15 = 1;  //STEP
             }
             
             lastTime = milliseconds;

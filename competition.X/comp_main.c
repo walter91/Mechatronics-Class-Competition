@@ -68,7 +68,7 @@ int main()
 				switch(findCenterState)
 				{
 					case 0:
-						if(find_normal())   //First normal found
+						if(find_normal_analog())   //First normal found
 						{
 							findCenterState = 1;
 						}
@@ -117,7 +117,8 @@ int main()
 					case 0:	//Default, turn 45 degrees...
 						if(turn_degrees(45))
 						{
-							findLoaderState = 1;
+							findLoaderState = 0;    //Change back to findLoaderState = 1;
+                            STATE = toLoader;   //Don't include
 							startTime = milliseconds;
 							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)//Pause and allow for the IR sensor to adjust
                             {

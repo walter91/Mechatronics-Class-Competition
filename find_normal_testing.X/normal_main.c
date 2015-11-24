@@ -66,15 +66,21 @@ int main()
         switch(STATE)
        {
             case 0:
-                if(find_24())//if(find_normal_analog())
+                if(find_normal_analog())//if(find_normal_analog())
                 {
                     STATE = 1;
                 }
                 break;
-           case 1:
-               delay(2500);
+            case 1:
+               delay(1000);
                STATE = 0;
-                break;
+               break;
+            case 2:
+               if(find_inches(10.0))
+               {
+                    STATE = 1;
+               }
+               break;
        }
     }
 }
