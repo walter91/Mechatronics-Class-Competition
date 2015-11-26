@@ -13,7 +13,7 @@
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
-_FICD(ICS_PGx3);
+_FICD(ICS_PGx3);    //Debug Using programming module 3
 
 //Values
 #define LEFT_FORWARD 1
@@ -22,22 +22,28 @@ _FICD(ICS_PGx3);
 #define LEFT_BACKWARD 1
 #define RIGHT_BACKWARD 0
 
-#define STEP_DELAY 1 // Is this value arbitrary right now or is this a minimum/optimized value? - David
+#define STEP_DELAY 1 // Is this value arbitrary... but it works well
 
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
+
 #define DIST_TOL 0.25
-#define STANDARD_STEP_LENGTH .25
-#define STANDARD_STEP_ANGLE 5
-#define LARGE_STEP_ANGLE 10
+
+#define LARGE_STEP_LENGTH 0.50
+#define STANDARD_STEP_LENGTH 0.25
+
+#define LARGE_STEP_ANGLE 10.0
+#define STANDARD_STEP_ANGLE 5.0
+
+
 //Half Step mode
 #define stepsPerRev 400.0 //Number of steps required for one rev of motor
 #define wheelCircumferenceInches 12.7172 //4.048*3.14	//Drive wheel circumference in inches
 #define stepsPerInch  15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
 #define stepsPerDegree 0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
 
-#define INCH_PER_VOLT 0.0465
-#define INCH_OFFSET .1955
+#define INCH_PER_VOLT 20.825    //Calibrated (11-24-15)
+#define INCH_OFFSET 0.915   //Calibrated (11-24-15)
 
 #define LOADING_IR_FREQ 100
 
@@ -206,18 +212,18 @@ int loading_timer(unsigned long waitTime)
 
 
 
-float analog_ultra_inches()
+float analog_ultra_inches() //Returns average of last ten distance readings...
 {
 	static float ultraVolts;
 	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
     
     for(i=0; i <10; i++)	//For 0-9 (all 10)
 	{
-		ultraInchesAvg[i] = ultraInchesAvg[i+1];
+		ultraInchesAvg[i] = ultraInchesAvg[i+1];    //Shift the inch values...
 	}
     
 	//static float inches;
-	ultraInchesAvg[10] = ultraVolts*20.825+.915;
+	ultraInchesAvg[10] = ultraVolts*INCH_PER_VOLT + INCH_OFFSET;    //Update the final value in the array
     
     static float sum;
 	sum = 0;
@@ -234,56 +240,12 @@ float analog_ultra_inches()
 }
 
 
-
-float average_inches_int()	//This will return the average distance from the last 250 milliseconds...
-{
-	static float sum;
-	sum = 0;
-	
-	for(i=0; i <=9; i++)	//For 0-9 (all 10)
-	{
-		sum = sum + ultraVoltsInt[i];
-	}
-	
-	static float averageVolts;
-	averageVolts = (sum/10.0);
-
-	
-    float inches;
-	inches = averageVolts*20.0-3.25;
-	
-	return(inches);
-}
-
-
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
     // Remember to clear the Timer1 interrupt flag when this ISR is entered.
     _T1IF = 0; // Clear interrupt flag
     milliseconds++;
-	//microseconds = microseconds + 100;
-	
-	//countTimer++;
-	
-//	if(countTimer >= 10)
-//    {
-//		milliseconds++;
-//		countTimer = 0;
-//		//countTimerDist++;
-//	}
-	/*if(countTimerDist >= 200)
-	{
-		for(i=0; i < 9; i++)	//For i = 0-8 (first 9)
-		{
-			ultraVoltsInt[i] = ultraVoltsInt[i+1];
-		}
-		
-		ultraVoltsInt[9] = (ADC1BUF0/4095.0)*3.3;	//For #9 (tenth) Read analog-to-digital converter and save in volts
-
-		countTimerDist = 0;	//reset timer count...
-	}*/
 }
-
 
 
 void timing_interrupt_config()
@@ -299,99 +261,6 @@ void timing_interrupt_config()
     _T1IF = 0;      // Clear interrupt flag
     PR1 = 500;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
 }
-
-
-
-float ultra_avg()
-{
-    static unsigned long averageMicrosF;
-	//static unsigned long averageMicrosB;
-	static unsigned long oldAverageMicrosF;
-	//static unsigned long oldAverageMicrosB;
-	static float distance;
-	
-	static unsigned long sumMicrosF;
-	//static unsigned long sumMicrosB;
-	
-	sumMicrosF = 0;
-	//sumMicrosB = 0;
-	
-	for(i = 0; i <= ULTRASONIC_VALUES; i++)
-	{
-		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
-		//sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
-	}
-	
-	sumMicrosF = sumMicrosF + oldAverageMicrosF;
-	//sumMicrosB = sumMicrosB + oldAverageMicrosB;
-	
-	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
-	//averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
-	
-	oldAverageMicrosF = averageMicrosF;
-	//oldAverageMicrosB = averageMicrosB;
-    
-    distance = averageMicrosF;
-    //distance  =  (averageMicrosF+averageMicrosB)/2.0;
-    
-    
-    return(distance);
-}
-
-
-
-float read_dist()
-{
-	static unsigned long averageMicrosF;
-	static unsigned long averageMicrosB;
-	static unsigned long oldAverageMicrosF;
-	static unsigned long oldAverageMicrosB;
-	static float distance;
-	
-	static unsigned long sumMicrosF;
-	static unsigned long sumMicrosB;
-	
-	sumMicrosF = 0;
-	sumMicrosB = 0;
-	
-	for(i = 0; i <= ULTRASONIC_VALUES; i++)
-	{
-		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
-		sumMicrosB = sumMicrosB + ultrasonicValuesB[i];
-	}
-	
-	sumMicrosF = sumMicrosF + oldAverageMicrosF;
-	sumMicrosB = sumMicrosB + oldAverageMicrosB;
-	
-	averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES + 1);
-	averageMicrosB = sumMicrosB/(ULTRASONIC_VALUES + 1);
-	
-	oldAverageMicrosF = averageMicrosF;
-	oldAverageMicrosB = averageMicrosB;
-	
-	distance = (( 48.0 - ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) - INCH_FROM_ULTRA_TO_CENTER ) + ( ((float)averageMicrosF * INCH_PER_MIRCOSECONDS) + INCH_FROM_ULTRA_TO_CENTER ))/2.0;
-	
-	return(distance);
-}
-
-
-
-float read_dist_simple()
-{
-    
-    float sumMicrosF = 0;
-	
-	for(i = 0; i <= ULTRASONIC_VALUES; i++)
-	{
-		sumMicrosF = sumMicrosF + ultrasonicValuesF[i];
-	}
-	
-	float averageMicrosF = sumMicrosF/(ULTRASONIC_VALUES);
-    
-	//return(averageMicrosF);
-    return(simpleUltrasonicTime);
-}
-
 
 
 float ir_front_percent()
@@ -435,35 +304,6 @@ float ir_back_percent()
 }
 
 
-
-int ir_front_found()
-{
-    if((-0.0298*ADC1BUF0 + 122.1) >= IR_FOUND_THRESH)
-    {
-        return(1);
-    }
-    else
-    {
-        return(0);
-    }
-}
-
-
-
-int ir_back_found()
-{
-    if((-0.0298*ADC1BUF1 + 122.1) >= IR_FOUND_THRESH)
-    {
-        return(1);
-    }
-    else
-    {
-        return(0);
-    }
-}
-
-
-
 float abs_f(float value)
 {
 	if(value >= 0)
@@ -484,14 +324,14 @@ int go_straight_inches(float inches)
 
     if(inches >= 0)
     {
-        _RB7 = 0;  //set direction pins, both forward, DIR-R
-        _RB8 = 1;  //set direction pins, both forward, DIR-L
+        _LATB7 = 0;  //set direction pins, both forward, DIR-R
+        _LATB8 = 1;  //set direction pins, both forward, DIR-L
     }
 
     else
     {
-        _RB7 = 1;  //set direction pins, both backward, DIR-R
-        _RB8 = 0;  //set direction pins, both backward, DIR-L
+        _LATB7 = 1;  //set direction pins, both backward, DIR-R
+        _LATB8 = 0;  //set direction pins, both backward, DIR-L
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
@@ -504,11 +344,11 @@ int go_straight_inches(float inches)
         {
             if(_RB15)   //STEP
             {
-                _RB15 = 0;  //STEP
+                _LATB15 = 0;  //STEP
             }
             else
             {
-                _RB15 = 1;  //STEP
+                _LATB15 = 1;  //STEP
             }
             
             lastTime = milliseconds;
@@ -576,114 +416,6 @@ int turn_degrees(float degrees)
 
 
 
-int find_normal()
-{
-	static int state = 0;
-	static float dist1;
-	static float dist2;
-	static int dirFlag = 0;	//CW rotation initially...
-	int returnFlag = 0;
-		
-	switch(state)
-	{
-		case 0:	//Take initial reading...
-			dist1 = ultra_avg();;	//only make reading once...
-			state = 1;
-			break;
-		
-		case 1:	//Turn... then Measure & Determine Direction...
-			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
-			{
-                dist2 = ultra_avg();
-				//dist2 = read_dist_simple();
-                //dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
-				
-				if(dist2 >= dist1)	//turned wrong direction
-				{
-					dirFlag = 1;	//CCW rotation
-				}
-				else
-				{
-					dirFlag = 0;	//CW rotation
-				}
-				dist1 = dist2;	//update dist1
-				
-				state = 2;
-			}
-			break;
-		
-		case 2:	//Turn...then Measure & Determine if normal...
-			if(dirFlag = 1)	//CCW rotation, correct direction
-			{
-				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
-				{
-                    dist2 = ultra_avg();
-					//dist2 = read_dist_simple();
-                    //dist2 = analog_ultra_inches();	//take a new measurement
-					if(dist2 >= dist1)	//we're getting farther again...
-					{
-						state = 3;	//normal, move on...
-					}
-					else
-					{
-						state = 2;	//not normal, keep turning
-					}
-					dist1 = dist2;	//update dist1
-				}
-				else
-				{
-					//do nothing, still turning...
-				}
-			}
-			else if(dirFlag = 0)	//CW rotation, correct direction
-			{
-				if(turn_degrees(STANDARD_STEP_ANGLE))
-				{
-                    dist2 = ultra_avg();
-					//dist2 = read_dist_simple();
-                    //dist2 = analog_ultra_inches();
-					if(dist2 >= dist1)	//we're getting farther again...
-					{
-						state = 3;	//normal, move on...
-					}
-					else
-					{
-						state = 2;	//not normal, keep turning
-					}
-					dist1 = dist2;	//update dist1
-				}
-				else
-				{
-					//do nothing, still turning...
-				}
-			}
-			break;
-		
-		case 3:	//Turn back to estimated "more" normal...
-			if(dirFlag = 1)	//Turn back CW (previously rotated CCW)
-			{
-				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
-				{
-					state = 0;	//reset state
-					returnFlag = 1;	//prepare to confirm normal
-				}
-			}
-			else if(dirFlag = 0)	//Turn back CCW (previously rotated CW)
-			{
-				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
-				{
-					state = 0;	//reset state
-					returnFlag = 1;	//prepare to confirm normal
-				}
-			}
-			break;
-	}
-
-	return(returnFlag);		
-}
-
-
-
 int find_normal_analog()
 {
 	static int state = 0;
@@ -720,7 +452,7 @@ int find_normal_analog()
 			break;
 		
 		case 2:	//Turn...then Measure & Determine if normal...
-			if(dirFlag = 1)	//CCW rotation, correct direction
+			if(dirFlag == 1)	//CCW rotation, correct direction
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
 				{
@@ -765,7 +497,7 @@ int find_normal_analog()
 			break;
 		
 		case 3:	//Turn back to estimated "more" normal...
-			if(dirFlag = 1)	//Turn back CW (previously rotated CCW)
+			if(dirFlag == 1)	//Turn back CW (previously rotated CCW)
 			{
 				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
 				{
@@ -773,7 +505,7 @@ int find_normal_analog()
 					returnFlag = 1;	//prepare to confirm normal
 				}
 			}
-			else if(dirFlag = 0)	//Turn back CCW (previously rotated CW)
+			else if(dirFlag == 0)	//Turn back CCW (previously rotated CW)
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
 				{
@@ -786,69 +518,6 @@ int find_normal_analog()
 
 	return(returnFlag);		
 }
-
-
-
-/*
-int find_normal()
-{
-	static int statFlag = 0;
-	static int dirFlag = 0;
-	//static float dist1 = 24.0;	//Dist1 = Measure distance
-    static float dist2;	//Dist2 = Measure distance
-	
-	if(dirFlag == 0)    //turn cw
-	{
-		turn_degrees(5.0);	//Turn
-	}
-	else    //turn ccw
-	{
-		turn_degrees(-5.0);
-	}
-	
-	
-	//dist2 = read_dist_simple();
-	dist2 = analog_ultra_inches();
-	
-	if((dist2 >= dist1) && (statFlag == 0))	//If (Dist2 > Dist1 and Flag = 0)	//Going wrong direction, first time through
-	{
-		if(dirFlag == 1)	//	Go the other way?
-		{
-			dirFlag = 0;
-		}
-		else
-		{
-			dirFlag = 1;
-		}
-		dist1 = dist2;
-		return(0);	//keep searching
-	}
-    
-	else if(dist1 >= dist2)	//Going right direction
-	{
-		//	Continue turning in that direction
-		statFlag = 1;		//	Flag = 1
-        dist1 = dist2;
-		return(0);	// keep searching
-	}
-    
-	else if((dist2 > dist1) && (statFlag == 1))		//Else if(Dist2 > Dist1 && Flag==1)	//Reached the minimum
-	{
-		if(dirFlag == 0)
-		{
-			turn_degrees(-1*STANDARD_STEP_ANGLE/2.0);	//	Go back half a step in angle
-		}
-		else
-		{
-			turn_degrees(STANDARD_STEP_ANGLE/2.0);	//	Go back half a step in angle
-		}
-		dist1 = dist2;
-        statFlag = 0;	//	Flag = 0
-		return(1);	//	Return(1)
-		        
-	}
-}
-*/
 
 
 
@@ -908,35 +577,7 @@ int find_24()
 
 
 
-int find_24_analog()
-{
-	static float error;
-		
-	error = (INCH_TO_WALL -  analog_ultra_inches());	//Error = (24 - Dist)
-	//TO DO: write a read_dist() function. This should return a float which is a filtered value representing the distance from the wall
-		
-	if(abs_f(error) < DIST_TOL)	//We are there...
-	{
-		return(1);	//Center Found
-	}
-	
-	else	//Change position...
-	{
-		if(error > 0)	//Positive error, move backward
-		{
-			go_straight_inches(-1*STANDARD_STEP_LENGTH); // If our DIST_TOL is 0.1 in, how can we reach it taking 0.5 in steps? Reduce to 0.1 in, maybe? - David
-		}
-		else	//Negative error, move forward
-		{
-			go_straight_inches(STANDARD_STEP_LENGTH);
-		}
-		
-		return(0);	//Keep looking for center
-	}
-}
-
-
-
+/*
 void ultrasonic_setup()
 {
 	// Configure CN interrupt on Pin2 and Pin3
@@ -1012,32 +653,8 @@ void ultrasonic_setup()
     TMR3 = 12500;
 	
 }
+*/
 
-
-
-void loader_finder_digital_setup()
-{
-    //TODO: Add all configurations needed to change pin to digital input...
-    //      as well as anything else to make the switch between analog and digital
-    
-	// Configure CN interrupt on Pin2 and Pin3
-    _CN3IE = 1;     // Enable CN on pin 6 (CNEN1 register)
-    _CN3PUE = 0;    // Disable pull-up resistor (CNPU1 register)
-    _CNIP = 4;      // Set CN interrupt priority (IPC4 register)
-    _CNIF = 0;      // Clear interrupt flag (IFS1 register)
-    _CNIE = 1;      // Enable CN interrupts (IEC1 register)
-	
-	loaderIrState = _RA1;   //IR Back
-	
-	for(i = 0; i <= IR_TIMES; i++)
-	{
-		irTimeValues[i] = 0;	//Start with a blank array
-	}
-    
-    ANSA = 0;       //Turn off analog for port A
-    _TRISA0 = 1;    //Pin2 as Input
-    _TRISA1 = 1;    //Pin3 as Input
-}
 
 
 
@@ -1094,7 +711,7 @@ void ir_finder_analog_setup()
 }
 
 
-
+/*
 void _ISR _CNInterrupt(void)    //Interrupt
 {
     _CNIF = 0;      // Clear interrupt flag (IFS1 register)
@@ -1157,7 +774,7 @@ void _ISR _CNInterrupt(void)    //Interrupt
 		}
 	}
 }
-
+*/
 
 #ifdef	__cplusplus
 extern "C" {

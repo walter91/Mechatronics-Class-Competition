@@ -188,7 +188,7 @@ int main()
 				switch(findTargetState)
 				{
 					case 0: //Just starting
-						if(ir_front_found())    //straight ahead is the target
+						if(ir_front_percent() >= 50.0)    //straight ahead is the target
                         {
                             STATE = shooting;
                             targetsFound = targetsFound|0b010;
@@ -210,13 +210,13 @@ int main()
                         }
                         break;
                     case 2:
-                        if(ir_front_found())    //It was the right one, start shooting
+                        if(ir_front_percent() >= 50.0)    //It was the right one, start shooting
                         {
                             STATE = shooting;
                             targetsFound = targetsFound|0b001;
                             findTargetState = 0;
                         }
-                        else if(ir_back_found())    //Turned the wrong way...
+                        else if(ir_back_percent() >= 50.0)    //Turned the wrong way...
                         {
                             findTargetState = 3;
                             targetsFound = targetsFound|0b100;
