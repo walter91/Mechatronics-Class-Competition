@@ -42,6 +42,9 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 #define stepsPerInch  15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
 #define stepsPerDegree 0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
 
+#define LOAD_TIME .2    //Seconds for a PPball to fall past the gate...
+#define SHOOT_TIME .2   //Seconds for a PPball to be shot...
+
 #define INCH_PER_VOLT 20.825    //Calibrated (11-24-15)
 #define INCH_OFFSET 0.915   //Calibrated (11-24-15)
 
@@ -165,8 +168,8 @@ void analog_ultrasonic_setup()
 
     // AD1CON3 register
     _ADRC = 0;              // AD1CON3<15> -- Use system clock
-    _SAMC = 0x00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
-    _ADCS = 0x00111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    _SAMC = 0b00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0b00111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
 
     ANSA = 1;       //Turn on analog for port A
 	ANSB = 1;		//Turn on analog for port B
@@ -177,6 +180,81 @@ void analog_ultrasonic_setup()
 	
 }
 
+
+int shoot(int rounds)
+{
+    static int shootState = 0;
+    static int roundsFired = 0;
+    static int returnStatus = 0;
+    static unsigned long shootStartTime;
+    
+    switch(shootState)
+    {
+        case(0):
+            shootStartTime = milliseconds;
+            //TO DO: actuate lower gate
+            shootState = 1;
+            returnStatus = 0;
+            break;
+        
+        case(1):    //Load one ball into barrel (open lower gate for LOAD_TIME seconds)
+            if((milliseconds - shootStartTime) >= LOAD_TIME)    //Timer is expired
+            {
+                shootState = 2; //Move on to shooting
+                //TODO: turn off the lower gate
+                //TODO: Actuate the shooting solenoid
+                shootStartTime = milliseconds;
+            }
+            else
+            {
+                //wait for the timer to expire
+            }
+            returnStatus = 0;
+            break;
+            
+        case(2):    //Fire one ball (actuate shooter for SHOOT_TIME seconds)
+            if((milliseconds - shootStartTime) >= SHOOT_TIME)    //Timer is expired
+            {
+                shootState = 3; //Move on to shooting
+                //TODO: turn off the shooting solenoid
+                //TODO: open the lower gate
+                shootStartTime = milliseconds;
+            }
+            else
+            {
+                //wait for the timer to expire
+            }           
+            returnStatus = 0;
+            break;
+            
+        case(3):    //Load one ball into holding chamber (open upper gate for LOAD_TIME seconds)
+            if((milliseconds - shootStartTime) >= LOAD_TIME)    //Timer is expired
+            {
+                shootState = 4; //Move on to shooting
+                //TODO: close the lower gate
+            }
+            else
+            {
+                //wait for the timer to expire
+            }
+            
+            returnStatus = 0;
+            break;
+            
+        case(4):            
+            if(roundsFired < rounds)
+            {
+                returnStatus = 0;   //We've not shot enough, return for more...
+            }
+            else
+            {
+                returnStatus = 1;   //We've shot enough, go out...
+            }
+            shootState = 0;
+            break;
+    }
+    return(returnStatus);
+}
 
 
 int loading_timer(unsigned long waitTime)
@@ -240,12 +318,14 @@ float analog_ultra_inches() //Returns average of last ten distance readings...
 }
 
 
+
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
     // Remember to clear the Timer1 interrupt flag when this ISR is entered.
     _T1IF = 0; // Clear interrupt flag
     milliseconds++;
 }
+
 
 
 void timing_interrupt_config()
@@ -261,6 +341,7 @@ void timing_interrupt_config()
     _T1IF = 0;      // Clear interrupt flag
     PR1 = 500;    // Count to 1 milli-sec at 1 mHz, instruct at 500 kHz
 }
+
 
 
 float ir_front_percent()
@@ -302,6 +383,7 @@ float ir_back_percent()
     
     return(percent);
 }
+
 
 
 float abs_f(float value)
@@ -416,7 +498,7 @@ int turn_degrees(float degrees)
 
 
 
-int find_normal_analog()
+int find_normal()
 {
 	static int state = 0;
 	static float dist1;
@@ -473,13 +555,119 @@ int find_normal_analog()
 					//do nothing, still turning...
 				}
 			}
-			else if(dirFlag = 0)	//CW rotation, correct direction
+			else if(dirFlag == 0)	//CW rotation, correct direction
 			{
 				if(turn_degrees(STANDARD_STEP_ANGLE))
 				{
 					//dist2 = read_dist_simple();
                     dist2 = analog_ultra_inches();
 					if(dist2 >= dist1)	//we're getting farther again...
+					{
+						state = 3;	//normal, move on...
+					}
+					else
+					{
+						state = 2;	//not normal, keep turning
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			break;
+		
+		case 3:	//Turn back to estimated "more" normal...
+			if(dirFlag == 1)	//Turn back CW (previously rotated CCW)
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
+				{
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
+				}
+			}
+			else if(dirFlag == 0)	//Turn back CCW (previously rotated CW)
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
+				{
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
+				}
+			}
+			break;
+	}
+
+	return(returnFlag);		
+}
+
+
+
+
+int find_corner()
+{
+	static int state = 0;
+	static float dist1;
+	static float dist2;
+	static int dirFlag = 0;	//CW rotation initially...
+	int returnFlag = 0;
+		
+	switch(state)
+	{
+		case 0:	//Take initial reading...
+			dist1 = analog_ultra_inches();	//only make reading once...
+			state = 1;
+			break;
+		
+		case 1:	//Turn... then Measure & Determine Direction...
+			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
+			{
+				//dist2 = read_dist_simple();
+                dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
+				
+				if(dist2 <= dist1)	//turned wrong direction
+				{
+					dirFlag = 1;	//CCW rotation
+				}
+				else
+				{
+					dirFlag = 0;	//CW rotation
+				}
+				dist1 = dist2;	//update dist1
+				
+				state = 2;
+			}
+			break;
+		
+		case 2:	//Turn...then Measure & Determine if normal...
+			if(dirFlag == 1)	//CCW rotation, correct direction
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
+				{
+					//dist2 = read_dist_simple();
+                    dist2 = analog_ultra_inches();	//take a new measurement
+					if(dist2 <= dist1)	//we're closer again...
+					{
+						state = 3;	//corner, move on...
+					}
+					else
+					{
+						state = 2;	//not normal, keep turning
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			else if(dirFlag == 0)	//CW rotation, correct direction
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE))
+				{
+					//dist2 = read_dist_simple();
+                    dist2 = analog_ultra_inches();
+					if(dist2 <= dist1)	//we're getting closer again...
 					{
 						state = 3;	//normal, move on...
 					}
@@ -702,8 +890,8 @@ void ir_finder_analog_setup()
 
     // AD1CON3 register
     _ADRC = 0;              // AD1CON3<15> -- Use system clock
-    _SAMC = 0x00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
-    _ADCS = 0x00111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    _SAMC = 0b00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0b0111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
 
     ANSA = 1;       //Turn on analog for port A
     _TRISA0 = 1;    //Pin2 as Input

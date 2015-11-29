@@ -66,7 +66,7 @@ int main()
         switch(STATE)
        {
             case 0:
-                if(find_normal_analog())//if(find_normal_analog())
+                if(find_normal())//if(find_normal_analog())
                 {
                     STATE = 1;
                 }

@@ -68,7 +68,7 @@ int main()
 				switch(findCenterState)
 				{
 					case 0:
-						if(find_normal_analog())   //First normal found
+						if(find_normal())   //First normal found
 						{
 							findCenterState = 1;
 						}
@@ -231,14 +231,14 @@ int main()
 				break;
 				
 			case shooting:
-				//check milliseconds
-				//call shoot() function 6 times
-				//function should handle all coordination of solenoids
-				//count number of shoot() calls
-				
-				//STATE = findLoader
-                
+                if(shoot(7))    //Six shots plus one load complete
+                {               
                     STATE = toLoader;
+                }
+                else
+                {
+                    //keep shooting...
+                }
 				break;
 			
             case findLoader2:
