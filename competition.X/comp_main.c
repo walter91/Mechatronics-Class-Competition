@@ -170,8 +170,10 @@ int main()
 				//this still needs to have the details worked out...
 				//If loaded with 6, STATE = toShooting, Break
 				//Else, do nothing (wait for loading)
-				
-				STATE = toShooting;
+				if(loading_timer(3.0))
+                {
+                    STATE = toShooting;
+                }
 				break;
 				
 			case toShooting:
