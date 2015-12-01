@@ -106,6 +106,55 @@ void delay(float millis)
 
 
 
+int stage_timer()
+{
+	if(milliseconds < 10000)	//First 10 seconds...
+	{
+		return(0);
+	}
+	else if(milliseconds < 40000)	//First shooting...
+	{
+		return(1);
+	}
+	else if(milliseconds < 70000)	//Second shooting...
+	{
+		return(2);
+	}
+	else if(milliseconds < 100000)	//Third shooting...
+	{
+		return(3);
+	}
+	else if(milliseconds < 105000)	//Ending...
+	{
+		rturn(4);
+	}
+	else	//It's Over...
+	{
+		return(5);
+	}
+}
+
+
+
+int stage_change()
+{
+	static int stage = 0;
+	
+	int newStage = stage_timer();
+	
+	if(newStage != stage)
+	{
+		stage = newStage;
+		return(1);
+	}
+	else
+	{
+		return(0);
+	}
+}
+
+
+
 void pin_config_init()
 {
 	//_TRISA5 = 0;	//LOADING SWEEPER, PIN1
@@ -179,6 +228,7 @@ void analog_ultrasonic_setup()
 	_TRISB2 = 1;	//Pin6 as Input
 	
 }
+
 
 
 int shoot(int rounds)
@@ -255,6 +305,7 @@ int shoot(int rounds)
     }
     return(returnStatus);
 }
+
 
 
 int loading_timer(unsigned long waitTime)
@@ -603,7 +654,6 @@ int find_normal()
 
 
 
-
 int find_corner()
 {
 	static int state = 0;
@@ -842,7 +892,6 @@ void ultrasonic_setup()
 	
 }
 */
-
 
 
 
