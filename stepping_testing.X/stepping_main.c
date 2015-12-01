@@ -29,7 +29,7 @@ int main()
                 if(go_straight_inches(10))
                 {
                     delay(250);
-                    STATE = 1;
+                    STATE = 0;
                 }
                 break;
            case 1:
@@ -49,7 +49,7 @@ int main()
             case 3:
                 if(go_straight_inches(-10))
                 {
-                    delay(10000);
+                    delay(2500);
                     STATE = 0;
                 }
                 break;

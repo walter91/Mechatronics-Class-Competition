@@ -22,7 +22,7 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 #define LEFT_BACKWARD 1
 #define RIGHT_BACKWARD 0
 
-#define STEP_DELAY 1 // Is this value arbitrary... but it works well
+#define STEP_DELAY 5 // Is this value arbitrary... but it works well
 
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
@@ -346,6 +346,42 @@ int loading_timer(unsigned long waitTime)
 
 float analog_ultra_inches() //Returns average of last ten distance readings...
 {
+    /******************/
+    
+    // AD1CHS register
+    _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN0 as positive input
+
+    // AD1CON1 register
+    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode
+    _MODE12 = 1;        // AD1CON1<10> -- 12-bit A/D operation
+    _FORM = 0;          // AD1CON1<9:8> -- Unsigned integer output
+    _SSRC = 7;          // AD1CON1<7:4> -- Auto conversion (internal counter)
+    _ASAM = 1;          // AD1CON1<2> -- Auto sampling
+
+    // AD1CSSL register
+    AD1CSSL = 0;        // AD1CSSL<15:0> -- Skip all channels on input scan --
+                        // see the CSCNA bits in AD1CON2
+
+    // AD1CON2 register
+    _PVCFG = 0;         // AD1CON2<15:14> -- Use VDD as positive ref voltage
+    _NVCFG = 0;         // AD1CON2<13> -- Use VSS as negative ref voltage
+    _CSCNA = 0;         // AD1CON2<10> -- Does not scan inputs specified in
+                        // AD1CSSx registers (instead uses channels specified
+                        // by CH0SA bits in AD1CHS register) -- Selecting '0'
+                        // here probably makes writing to the AD1CSSL register
+                        // unnecessary.
+    _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
+
+    // AD1CON3 register
+    _ADRC = 0;          // AD1CON3<15> -- Use system clock
+    _SAMC = 1;          // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0x3F;       // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    
+    
+    /*****************/
+    
 	static float ultraVolts;
 	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
     
@@ -400,6 +436,43 @@ void timing_interrupt_config()
 
 float ir_front_percent()
 {
+    
+    /******************/
+    
+    // AD1CHS register
+    _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+    _CH0SA = 0b00001;         // AD1CHS<4:0> -- Use AN0 as positive input
+
+    // AD1CON1 register
+    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode
+    _MODE12 = 1;        // AD1CON1<10> -- 12-bit A/D operation
+    _FORM = 0;          // AD1CON1<9:8> -- Unsigned integer output
+    _SSRC = 7;          // AD1CON1<7:4> -- Auto conversion (internal counter)
+    _ASAM = 1;          // AD1CON1<2> -- Auto sampling
+
+    // AD1CSSL register
+    AD1CSSL = 0;        // AD1CSSL<15:0> -- Skip all channels on input scan --
+                        // see the CSCNA bits in AD1CON2
+
+    // AD1CON2 register
+    _PVCFG = 0;         // AD1CON2<15:14> -- Use VDD as positive ref voltage
+    _NVCFG = 0;         // AD1CON2<13> -- Use VSS as negative ref voltage
+    _CSCNA = 0;         // AD1CON2<10> -- Does not scan inputs specified in
+                        // AD1CSSx registers (instead uses channels specified
+                        // by CH0SA bits in AD1CHS register) -- Selecting '0'
+                        // here probably makes writing to the AD1CSSL register
+                        // unnecessary.
+    _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
+
+    // AD1CON3 register
+    _ADRC = 0;          // AD1CON3<15> -- Use system clock
+    _SAMC = 1;          // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0x3F;       // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    
+    
+    /*****************/
+    
     //return values between 0-100 for percent of IR seen
     
     static float voltageHigh = 2.5;
@@ -412,7 +485,7 @@ float ir_front_percent()
 
     float offset = 100 - (rate*numLow);
 
-    float percent = ADC1BUF0*rate + offset;
+    float percent = ADC1BUF1*rate + offset;
     
     return(percent);
 }
@@ -421,6 +494,42 @@ float ir_front_percent()
 
 float ir_back_percent()
 {
+    /******************/
+    
+    // AD1CHS register
+    _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+    _CH0SA = 0b00010;         // AD1CHS<4:0> -- Use AN2 as positive input
+
+    // AD1CON1 register
+    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode
+    _MODE12 = 1;        // AD1CON1<10> -- 12-bit A/D operation
+    _FORM = 0;          // AD1CON1<9:8> -- Unsigned integer output
+    _SSRC = 7;          // AD1CON1<7:4> -- Auto conversion (internal counter)
+    _ASAM = 1;          // AD1CON1<2> -- Auto sampling
+
+    // AD1CSSL register
+    AD1CSSL = 0;        // AD1CSSL<15:0> -- Skip all channels on input scan --
+                        // see the CSCNA bits in AD1CON2
+
+    // AD1CON2 register
+    _PVCFG = 0;         // AD1CON2<15:14> -- Use VDD as positive ref voltage
+    _NVCFG = 0;         // AD1CON2<13> -- Use VSS as negative ref voltage
+    _CSCNA = 0;         // AD1CON2<10> -- Does not scan inputs specified in
+                        // AD1CSSx registers (instead uses channels specified
+                        // by CH0SA bits in AD1CHS register) -- Selecting '0'
+                        // here probably makes writing to the AD1CSSL register
+                        // unnecessary.
+    _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
+
+    // AD1CON3 register
+    _ADRC = 0;          // AD1CON3<15> -- Use system clock
+    _SAMC = 1;          // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0x3F;       // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    
+    
+    /*****************/
+    
     //return values between 0-100 for percent of IR seen
     
     static float voltageHigh = 2.5;
@@ -433,7 +542,7 @@ float ir_back_percent()
 
     float offset = 100 - (rate*numLow);
 
-    float percent = ADC1BUF0*rate + offset;
+    float percent = ADC1BUF2*rate + offset;
     
     return(percent);
 }
@@ -460,14 +569,14 @@ int go_straight_inches(float inches)
 
     if(inches >= 0)
     {
-        _LATB7 = 0;  //set direction pins, both forward, DIR-R
-        _LATB8 = 1;  //set direction pins, both forward, DIR-L
+        _RB7 = 0;  //set direction pins, both forward, DIR-R
+        _RB8 = 1;  //set direction pins, both forward, DIR-L
     }
 
     else
     {
-        _LATB7 = 1;  //set direction pins, both backward, DIR-R
-        _LATB8 = 0;  //set direction pins, both backward, DIR-L
+        _RB7 = 1;  //set direction pins, both backward, DIR-R
+        _RB8 = 0;  //set direction pins, both backward, DIR-L
     }
 
     if(stepsTaken < numberOfSteps)  //Not enough steps yet...
@@ -480,11 +589,11 @@ int go_straight_inches(float inches)
         {
             if(_RB15)   //STEP
             {
-                _LATB15 = 0;  //STEP
+                _RB15 = 0;  //STEP
             }
             else
             {
-                _LATB15 = 1;  //STEP
+                _RB15 = 1;  //STEP
             }
             
             lastTime = milliseconds;
@@ -511,13 +620,13 @@ int turn_degrees(float degrees)
 
     if(degrees >= 0)    //Turn CW
     {
-        _LATB7 = 1;  //set DIR-R backward
-        _LATB8 = 1;  //set DIR-L forward
+        _RB7 = 1;  //set DIR-R backward
+        _RB8 = 1;  //set DIR-L forward
     }
     else
     {
-        _LATB7 = 0;  //set DIR-R forward
-        _LATB8 = 0;  //set DIR-L backward
+        _RB7 = 0;  //set DIR-R forward
+        _RB8 = 0;  //set DIR-L backward
     }
 
     if(stepsTaken <= numberOfSteps)  //Not enough steps yet...
@@ -530,11 +639,11 @@ int turn_degrees(float degrees)
         {
             if(_RB15)
             {
-                _LATB15 = 0;
+                _RB15 = 0;
             }
             else
             {
-                _LATB15 = 1;
+                _RB15 = 1;
             }
             //toggle(PIN_STEP_L); //Change the value from 1->0 or visa-versa
             
@@ -1080,11 +1189,7 @@ int aquire_target()
 
 void ir_finder_analog_setup()
 {
-    //TODO: All configurations needed to switch between digital interrupt to
-    //      analog input
-    
-    _CN3IE = 0;     // Disable CN on pin 6 (CNEN1 register)
-    
+      
     //------------------------------------------------------------------------
     // A /D Configuration Function
     //
@@ -1092,12 +1197,20 @@ void ir_finder_analog_setup()
     // conversion mode.
     //------------------------------------------------------------------------
     
+    _ANSA0 = 1;
+    _ANSA1 = 1;
+    _ANSA2 = 1;
+    
+    
     // AD1CHS register
     _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+    //_CH0NB = 0;
+    
+    //_CH0SA = 0b00011;
 
     // AD1CON1 register
-    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
-    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode?
+    _ADON = 0;          // AD1CON1<15> -- Turn off A/D
+    _ADSIDL = 1;        // AD1CON1<13> -- A/D continues while in idle mode?
     _MODE12 = 1;        // AD1CON1<10> -- 12-bit or 10-bit?
     _FORM = 0b00;       // AD1CON1<9:8> -- Output format, pg. 211
     _SSRC = 0b0111;     // AD1CON1<7:4> -- Auto conversion (internal counter)
@@ -1118,14 +1231,17 @@ void ir_finder_analog_setup()
                         // by CH0SA bits in AD1CHS register
     _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
     _SMPI = 0b00001;    // AD1CON2<6:2> -- Interrupts at the conversion for
-                        // every other sample
+                        // every sample
 
     // AD1CON3 register
     _ADRC = 0;              // AD1CON3<15> -- Use system clock
-    _SAMC = 0b00001;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
-    _ADCS = 0b0111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    _SAMC = 0b00000;        // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0b00111111;     // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    
+    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
 
-    ANSA = 1;       //Turn on analog for port A
+    _ANSA0;
+    _ANSA1;         //Turn on analog for port A
     _TRISA0 = 1;    //Pin2 as Input
     _TRISA1 = 1;    //Pin3 as Input
 }
