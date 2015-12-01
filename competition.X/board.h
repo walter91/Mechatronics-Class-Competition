@@ -126,7 +126,7 @@ int stage_timer()
 	}
 	else if(milliseconds < 105000)	//Ending...
 	{
-		rturn(4);
+		return(4);
 	}
 	else	//It's Over...
 	{

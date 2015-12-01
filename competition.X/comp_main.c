@@ -200,7 +200,7 @@ int main()
 				break;
 				
 			case shooting:
-				if(!stage_chnage())
+				if(!stage_change())
 				{
 					if(shoot(7))    //Six shots plus one load complete
 					{               
