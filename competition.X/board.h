@@ -56,7 +56,7 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 
 #define INCH_PER_MIRCOSECONDS .00676
 
-
+#define CHECK_BIT(var,pos) !!((var) & (1<<(pos)))
 
 unsigned long milliseconds = 0; //Will run for 48+ days before overflow...
 unsigned long microseconds = 0;	//Will overflow after 71 minutes
@@ -90,6 +90,9 @@ unsigned long irTimeValues[IR_TIMES];
 
 unsigned long ultrasonicValuesB[ULTRASONIC_VALUES];
 unsigned long ultrasonicValuesF[ULTRASONIC_VALUES];
+
+int rightStage, leftStage, straightStage;
+
 
 int i;
 unsigned long startTime;
@@ -895,6 +898,186 @@ void ultrasonic_setup()
 
 
 
+int stage_when_found(int direction)
+{
+    static int stage;
+    switch(direction)
+    {
+        case(0):
+            stage = rightStage;
+            break;
+        case(1):
+            stage = straightStage;
+            break;
+        case(2):
+            stage = leftStage;
+            break;
+    }
+    return(stage);
+}
+
+
+
+void stage_accounting(int stage, int dir)
+{
+    switch(dir)
+    {
+        case(0):
+            rightStage = stage;
+            break;
+        case(1):
+            straightStage = stage;
+            break;
+        case(2):
+            leftStage = stage;
+            break;
+    }
+}
+
+
+
+int aquire_target()
+{
+    static int targetsFound = 0b000;
+    static int state = 0;
+    static int returnStatus = 0;
+    
+    switch(state)
+    {
+        case(0):    //Default (straight ahead)
+            if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
+            {
+                state = 0;  //reset the state for next time
+                targetsFound = targetsFound|0b010;  //Add straight to the list...
+                returnStatus = 1;   //We've found it...                
+            }
+            else    //Not the target...
+            {
+                state = 1;  //Move on to another corner
+                returnStatus = 0;   //Not yet found
+            }
+            break;
+        case(1):    //It wasn't straight ahead...
+            if(CHECK_BIT(targetsFound, 0))  //The right (0th bit) has previously been found...
+            {
+                if(stage_timer() == stage_when_found(0))   //We're in the stage
+                {
+                    state = 2;  //turn right and check
+                    returnStatus = 0;   //Not yet found
+                }
+                else    //we're not in the stage anymore...
+                {
+                    state = 3; //don't turn right...
+                    returnStatus = 0;   //Not yet found
+                }
+            }
+            else    //Right has not previously been found...
+            {
+                state = 2;  //turn right and check
+                returnStatus = 0;   //Not yet found
+            }
+            break;
+        case(2):    //turn right and check
+            if(turn_degrees(90))    //We've turned right...
+            {
+                if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
+                {
+                    state = 0;  //reset the state for next time
+                    targetsFound = targetsFound|0b001;  //Add right to the list...
+                    stage_accounting(stage_timer(), 0); //Take note that the right target was found while in this time stage...
+                    returnStatus = 1;   //We've found it...
+                }
+                else    //Not the target...
+                {
+                    state = 5;  //It wasn't right, check left (180 CCW)
+                    returnStatus = 0;   //Not yet found
+                }
+            }
+            else
+            {
+                //wait until turn is complete...
+            }
+            break;
+        case(3):    //facing straight, don't turn right...
+            if(CHECK_BIT(targetsFound, 2))  //The left target (2nd bit) has previously been found...
+            {
+                if(stage_timer() == stage_when_found(2))   //We're in the stage
+                {
+                    state = 4;  //turn left (90 CCW) and check
+                    returnStatus = 0;   //Not yet found
+                }
+                else    //we're not in the stage anymore...
+                {
+                    state = 7; //It wasn't straight, right has already been found, left has already been found...
+                    returnStatus = 0;   //Not yet found
+                }
+            }
+            else    //Left has not previously been found...
+            {
+                state = 4;  //turn left (90 CCW) and check
+                returnStatus = 0;   //Not yet found
+            }
+            break;
+        case(4):    //turn left (90 CCW) and check
+            if(turn_degrees(-90))    //We've turned left...
+            {
+                if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
+                {
+                    state = 0;  //reset the state for next time
+                    targetsFound = targetsFound|0b100;  //Add left to the list...
+                    stage_accounting(stage_timer(), 2); //Take note that the left target was found while in this time stage...
+                    returnStatus = 1;   //We've found it...
+                }
+                else    //Not the target...
+                {
+                    state = 7;  //It wasn't left...just checked, not straight, not right...
+                    returnStatus = 0;   //Not yet found
+                }
+            }
+            else
+            {
+                //wait until turn is complete...
+            }
+            break;        
+
+        case(5):    //turn 180 CCW and check
+            if(turn_degrees(-180))    //We've turned left...
+            {
+                if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
+                {
+                    state = 0;  //reset the state for next time
+                    targetsFound = targetsFound|0b100;  //Add left to the list...
+                    stage_accounting(stage_timer(), 2); //Take note that the left (2nd bit) target was found while in this time stage...
+                    returnStatus = 1;   //We've found it...
+                }
+                else    //Not the target...
+                {
+                    state = 7;  //It wasn't left...just checked, not straight, not right...
+                    returnStatus = 0;   //Not yet found
+                }
+            }
+            else
+            {
+                //wait until turn is complete...
+            }
+            break;
+        case(7):    //We're stuck, we didn't find the target...
+            if(turn_degrees(90))
+            {
+                if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
+                {
+                    state = 0;
+                    returnStatus = 1;   //We've found it...
+                }
+            }
+            break;
+    }
+    
+    return(returnStatus);
+}
+
+
+
 void ir_finder_analog_setup()
 {
     //TODO: All configurations needed to switch between digital interrupt to
@@ -946,6 +1129,7 @@ void ir_finder_analog_setup()
     _TRISA0 = 1;    //Pin2 as Input
     _TRISA1 = 1;    //Pin3 as Input
 }
+
 
 
 /*

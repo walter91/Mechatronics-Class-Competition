@@ -154,7 +154,16 @@ int main()
 				break;
 				
 			case findTarget:
-				switch(findTargetState)
+                if(aquire_target()) //target found
+                {
+                    STATE = shooting;
+                }
+                else
+                {
+                    //wait for target to be found...
+                }
+				/*
+                switch(findTargetState)
 				{
 					case 0: //Just starting
 						if(ir_front_percent() >= 50.0)    //straight ahead is the target
@@ -198,6 +207,7 @@ int main()
                         }
 				}
 				break;
+                 */
 				
 			case shooting:
 				if(!stage_change())
