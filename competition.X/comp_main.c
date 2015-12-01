@@ -59,6 +59,7 @@ int main()
     analog_ultrasonic_setup();
 	ir_finder_analog_setup();
    
+    //while(some_button_is_not_pushed); //This will allow the system to pause until a start button is pushed before the 
     
 	while(1)
 	{
