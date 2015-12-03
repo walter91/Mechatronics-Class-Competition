@@ -42,7 +42,7 @@ int main()
     
     // AD1CHS register
     _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
-    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN1 as positive input
+    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN0 as positive input
 
     // AD1CON1 register
     _ADON = 1;          // AD1CON1<15> -- Turn off A/D

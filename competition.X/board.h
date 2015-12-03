@@ -444,7 +444,7 @@ float ir_front_percent()
     
     // AD1CHS register
     _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
-    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN1 as positive input
+    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN0 as positive input
 
     // AD1CON1 register
     _ADON = 1;          // AD1CON1<15> -- Turn off A/D
@@ -497,10 +497,10 @@ float ir_back_percent()
     
     // AD1CHS register
     _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
-    _CH0SA = 0b00010;         // AD1CHS<4:0> -- Use AN2 as positive input
+    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN0 as positive input
 
     // AD1CON1 register
-    _ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    _ADON = 1;          // AD1CON1<15> -- Turn off A/D
     _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode
     _MODE12 = 1;        // AD1CON1<10> -- 12-bit A/D operation
     _FORM = 0;          // AD1CON1<9:8> -- Unsigned integer output
@@ -526,23 +526,19 @@ float ir_back_percent()
     _SAMC = 1;          // AD1CON3<12:8> -- Auto sample every A/D period TAD
     _ADCS = 0x3F;       // AD1CON3<7:0> -- A/D period TAD = 64*TCY
     
+    //_ADON = 1;          // AD1CON1<15> -- Turn on A/D
     
     /*****************/
     
     //return values between 0-100 for percent of IR seen
     
-    static float voltageHigh = 2.5;
-    static float voltageLow = 0.6;
+    static float voltageLow = 1.22;
+          
+    float numLow;
+    numLow = (4095)*(1.22/3.3);
     
-    float numHigh = ((2^12)-1)*(voltageHigh/3.3);
-    float numLow = ((2^12)-1)*(voltageLow/3.3);
-    
-    float rate = 100/(numLow - numHigh);
-
-    float offset = 100 - (rate*numLow);
-
-    float percent = ADC1BUF2*rate + offset;
-    
+    float percent;
+    percent = 100.0 * ((ADC1BUF0-numLow)/(4095.0-numLow));
     return(percent);
 }
 

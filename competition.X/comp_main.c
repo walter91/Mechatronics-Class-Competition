@@ -22,8 +22,8 @@ int main()
     pin_config_init();
     timing_interrupt_config();
 	//ultrasonic_setup();
-    analog_ultrasonic_setup();
-	ir_finder_analog_setup();
+//    analog_ultrasonic_setup();      TO DO: Remove/change these two.
+//	ir_finder_analog_setup();
    
     //while(some_button_is_not_pushed); //This will allow the system to pause until a start button is pushed before the 
     
