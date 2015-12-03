@@ -38,10 +38,59 @@ int main()
     //timing_interrupt_config();
     //analog_ultrasonic_setup();
     
+    // From the ir_front_percent() function
+    
+    // AD1CHS register
+    _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
+    _CH0SA = 0b00000;         // AD1CHS<4:0> -- Use AN1 as positive input
+
+    // AD1CON1 register
+    _ADON = 1;          // AD1CON1<15> -- Turn off A/D
+    _ADSIDL = 0;        // AD1CON1<13> -- A/D continues while in idle mode
+    _MODE12 = 1;        // AD1CON1<10> -- 12-bit A/D operation
+    _FORM = 0;          // AD1CON1<9:8> -- Unsigned integer output
+    _SSRC = 7;          // AD1CON1<7:4> -- Auto conversion (internal counter)
+    _ASAM = 1;          // AD1CON1<2> -- Auto sampling
+
+    // AD1CSSL register
+    AD1CSSL = 0;        // AD1CSSL<15:0> -- Skip all channels on input scan --
+                        // see the CSCNA bits in AD1CON2
+
+    // AD1CON2 register
+    _PVCFG = 0;         // AD1CON2<15:14> -- Use VDD as positive ref voltage
+    _NVCFG = 0;         // AD1CON2<13> -- Use VSS as negative ref voltage
+    _CSCNA = 0;         // AD1CON2<10> -- Does not scan inputs specified in
+                        // AD1CSSx registers (instead uses channels specified
+                        // by CH0SA bits in AD1CHS register) -- Selecting '0'
+                        // here probably makes writing to the AD1CSSL register
+                        // unnecessary.
+    _ALTS = 0;          // AD1CON2<0> -- Sample MUXA only
+
+    // AD1CON3 register
+    _ADRC = 0;          // AD1CON3<15> -- Use system clock
+    _SAMC = 1;          // AD1CON3<12:8> -- Auto sample every A/D period TAD
+    _ADCS = 0x3F;       // AD1CON3<7:0> -- A/D period TAD = 64*TCY
+    
+    //_ADON = 1;          // AD1CON1<15> -- Turn on A/D
+    
+    /*****************/
+    
+    //return values between 0-100 for percent of IR seen
+    
+    static float voltageLow = 1.22;
+          
+    float numLow;
+    numLow = (4095)*(1.22/3.3);
+    
+    float percent;
+    float percent2;
+    
+    //return(percent);
     
     while(1)
     {
-        //OC1R = ir_front_percent()*PR2;    //Should output PWM with duty cycle from 0%-100% for 0"-48"
-    
+        percent = 100.0 * ((ADC1BUF0-numLow)/(4095.0-numLow));
+        percent2 = ir_front_percent();
+        
     }
 }
