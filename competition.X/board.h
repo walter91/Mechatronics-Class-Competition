@@ -160,6 +160,9 @@ int stage_change()
 
 void pin_config_init()
 {
+    
+    //TO DO: Update pin out
+    
 	//_TRISA5 = 0;	//LOADING SWEEPER, PIN1
 	
     _TRISA0 = 1;    //IR FRONT, PIN2
@@ -441,7 +444,7 @@ float ir_front_percent()
     
     // AD1CHS register
     _CH0NA = 0;         // AD1CHS<7:5> -- Use VDD as negative input
-    _CH0SA = 0b00001;         // AD1CHS<4:0> -- Use AN0 as positive input
+    _CH0SA = 0b00001;         // AD1CHS<4:0> -- Use AN1 as positive input
 
     // AD1CON1 register
     _ADON = 1;          // AD1CON1<15> -- Turn on A/D
