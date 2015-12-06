@@ -33,26 +33,26 @@ int main()
                 }
                 break;
            case 1:
-                if(go_straight_inches(-5))
+                if(turn_degrees(90))
                 {
                     delay(250);
-                    STATE = 2;
+                    STATE = 1;
                 }
                 break;
-            case 2:
-                if(go_straight_inches(5))
-                {
-                    delay(250);
-                    STATE = 3;
-                }
-                break;
-            case 3:
-                if(go_straight_inches(-10))
-                {
-                    delay(2500);
-                    STATE = 0;
-                }
-                break;
+//            case 2:
+//                if(go_straight_inches(10))
+//                {
+//                    delay(250);
+//                    STATE = 2;
+//                }
+//                break;
+//            case 3:
+//                if(turn_degrees(90))
+//                {
+//                    delay(250);
+//                    STATE = 3;
+//                }
+//                break;
        }
                  
     }
