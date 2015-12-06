@@ -164,6 +164,8 @@ void pin_config_init()
     //TO DO: Update pin out
     
 	//_TRISA5 = 0;	//LOADING SWEEPER, PIN1
+    
+    // Pin 5: loading sweeper, latb1, see loading_timer()
 	
     _TRISA0 = 1;    // IR FRONT, PIN2
     _ANSA0 = 1;     // ADC1BUF0
@@ -183,6 +185,7 @@ void pin_config_init()
     _TRISB7 = 0;    //DIR-RIGHT, PIN11
     _TRISB8 = 0;    //DIR-LEFT, PIN12
     _TRISB15 = 0;   //STEP, PIN18
+    _ANSB15 = 0;
     
     _TRISB9 = 0;    //LOADER TOP, PIN13
     _TRISA6 = 0;    //SHOOTER, PIN14
@@ -248,8 +251,9 @@ int shoot(int rounds)
             {
                 shootState = 2; //Move on to shooting
                 //TODO: turn off the lower gate
-                //TODO: Actuate the shooting solenoid
+                _RA6 = 1; // Actuate the shooting solenoid
                 shootStartTime = milliseconds;
+                delay(250); // Short delay to allow full extention/strength of solenoid
             }
             else
             {
@@ -262,9 +266,10 @@ int shoot(int rounds)
             if((milliseconds - shootStartTime) >= SHOOT_TIME)    //Timer is expired
             {
                 shootState = 3; //Move on to shooting
-                //TODO: turn off the shooting solenoid
+                _RA6 = 0; //TODO: turn off the shooting solenoid
                 //TODO: open the lower gate
                 shootStartTime = milliseconds;
+                delay(250); 
             }
             else
             {
