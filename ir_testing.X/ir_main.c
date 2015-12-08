@@ -2,7 +2,7 @@
 
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
-#include "C:\Users\Walter\Documents\Walter\School\Fall 2015\Mechatronics\Mechatronics-Class-Competition\competition.X\board.h" //set up pin names, hold all additional functions
+#include "C:\Users\David\Documents\GitHub\Mechatronics-Class-Competition\competition.X\board.h" //set up pin names, hold all additional functions
 
 
 int main()
@@ -26,7 +26,10 @@ int main()
     while(1)
     {
         int x = 1;
+<<<<<<< HEAD
         analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+=======
+>>>>>>> origin/master
         float percent_front = ir_front_percent();
         float percent_back = ir_back_percent();
         
