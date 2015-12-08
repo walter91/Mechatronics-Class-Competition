@@ -42,8 +42,8 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 #define stepsPerInch  15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
 #define stepsPerDegree 0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
 
-#define LOAD_TIME .2    //Seconds for a PPball to fall past the gate...
-#define SHOOT_TIME .2   //Seconds for a PPball to be shot...
+#define LOAD_TIME 200    //Seconds for a PPball to fall past the gate...
+#define SHOOT_TIME 200   //Seconds for a PPball to be shot...
 
 #define INCH_PER_VOLT 20.825    //Calibrated (11-24-15)
 #define INCH_OFFSET 0.915   //Calibrated (11-24-15)
@@ -242,9 +242,9 @@ int shoot(int rounds)
     
     switch(shootState)
     {
-        case(0):
+        case(0)://Start the timer
             shootStartTime = milliseconds;
-            //TO DO: actuate lower gate
+            _RB9 = 1;//TO DO: actuate lower gate
             shootState = 1;
             returnStatus = 0;
             break;
@@ -253,10 +253,10 @@ int shoot(int rounds)
             if((milliseconds - shootStartTime) >= LOAD_TIME)    //Timer is expired
             {
                 shootState = 2; //Move on to shooting
-                //TODO: turn off the lower gate
+                _RB9 = 0;//TODO: turn off the lower gate
                 _RA6 = 1; // Actuate the shooting solenoid
                 shootStartTime = milliseconds;
-                delay(250); // Short delay to allow full extention/strength of solenoid
+                //delay(250); // Short delay to allow full extention/strength of solenoid
             }
             else
             {
@@ -271,8 +271,9 @@ int shoot(int rounds)
                 shootState = 3; //Move on to shooting
                 _RA6 = 0; //TODO: turn off the shooting solenoid
                 //TODO: open the lower gate
+                roundsFired = roundsFired + 1;
                 shootStartTime = milliseconds;
-                delay(250); 
+                //delay(250); 
             }
             else
             {
@@ -303,6 +304,7 @@ int shoot(int rounds)
             else
             {
                 returnStatus = 1;   //We've shot enough, go out...
+                roundsFired = 0;
             }
             shootState = 0;
             break;
@@ -399,23 +401,20 @@ void timing_interrupt_config()
 
 
 
-
-
-
 float ir_front_percent()
 {
     static float irFrontPercent[6] = {0,0,0,0,0,0};
-    
-    
+        
     //return values between 0-100 for percent of IR seen
     
-    static float voltageLow = 1.22;
+    static float voltageLow = 0.3;
           
     float numLow;
     numLow = (4095)*(1.22/3.3);
     
     float percent;
-    percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
+   // percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
+    percent = .156*ADC1BUF1-56.25;
     
     //Update array values
     for(i = 0; i < 5; i++ )
@@ -441,16 +440,37 @@ float ir_front_percent()
 
 float ir_back_percent()
 {
+    static float irFrontPercent[6] = {0,0,0,0,0,0};
+        
     //return values between 0-100 for percent of IR seen
     
-    static float voltageLow = 1.22;
+    static float voltageLow = 0.3;
           
     float numLow;
     numLow = (4095)*(1.22/3.3);
     
     float percent;
-    percent = 100.0 * ((ADC1BUF2-numLow)/(4095.0-numLow));
-    return(percent);
+   // percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
+    percent = 2.0*ADC1BUF2-120.0;
+    
+    //Update array values
+    for(i = 0; i < 5; i++ )
+    {
+        irFrontPercent[i] = irFrontPercent[i+1];
+    }
+    irFrontPercent[5] = percent;
+    
+    //Average the array
+    float sum = 0;
+    for(i = 0; i<=5; i++)
+    {
+        sum = sum + irFrontPercent[i];
+    }
+    
+    float averagePercent = sum/6.0;
+    
+    
+    return(averagePercent);
 }
 
 

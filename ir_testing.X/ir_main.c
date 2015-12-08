@@ -13,7 +13,7 @@ int main()
     
     //return values between 0-100 for percent of IR seen
     
-    static float voltageLow = 1.22;
+    static float voltageLow = 0.3;
           
     float numLow;
     numLow = (4095)*(1.22/3.3);
@@ -25,8 +25,8 @@ int main()
     
     while(1)
     {
-        percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
-        percent2 = ir_front_percent();
+        float percent_front = ir_front_percent();
+        float percent_back = ir_back_percent();
         
     }
 }

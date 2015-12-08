@@ -11,10 +11,14 @@ int main()
     pin_config_init();
     timing_interrupt_config();
     
+    //Wait to move hand from switch
+    delay(1000);
+    
     while(1)
     {
-        float inches = analog_ultra_inches();        
-        
+     if(shoot(6))
+     {
+        delay(5000);
+     }
     }
 }
-
