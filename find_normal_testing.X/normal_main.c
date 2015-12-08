@@ -11,8 +11,8 @@ int main()
 {
     pin_config_init();
     timing_interrupt_config();
-    ir_finder_analog_setup();
-    analog_ultrasonic_setup();
+    //ir_finder_analog_setup();
+    //analog_ultrasonic_setup();
     
     //analog_ultrasonic_setup();
     //ultrasonic_setup();

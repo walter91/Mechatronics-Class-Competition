@@ -2,7 +2,7 @@
 
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
-#include "C:\Users\David\Documents\GitHub\Mechatronics-Class-Competition\competition.X\board.h" //set up pin names, hold all additional functions
+#include "C:\Users\Walter\Documents\Walter\School\Fall 2015\Mechatronics\Mechatronics-Class-Competition\competition.X\board.h" //set up pin names, hold all additional functions
 
 
 int main()
@@ -25,7 +25,7 @@ int main()
     
     while(1)
     {
-        percent = 100.0 * ((ADC1BUF2-numLow)/(4095.0-numLow));
+        percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
         percent2 = ir_front_percent();
         
     }

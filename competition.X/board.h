@@ -167,12 +167,13 @@ void pin_config_init()
     
     // Pin 5: loading sweeper, latb1, see loading_timer()
 	
-    _TRISA0 = 1;    // IR FRONT, PIN2
+    _TRISA0 = 1;    // Ultrasonic, PIN2
     _ANSA0 = 1;     // ADC1BUF0
-    _TRISA1 = 1;    // IR BACK, PIN3
+    _TRISA1 = 1;    // IR FRONT, PIN3
     _ANSA1 = 1;     // ADC1BUF1
-    _TRISB0 = 1;    // Ultrasonic Pin 4
+    _TRISB0 = 1;    // IR BACK, Pin 4
     _ANSB0 = 1;     // ADC1BUF2
+
     
     //_TRISB0 = 0;    //FRONT TRIGGER, PIN4
     _TRISB1 = 0;    //BACK TRIGGER, PIN5
@@ -186,6 +187,8 @@ void pin_config_init()
     _TRISB8 = 0;    //DIR-LEFT, PIN12
     _TRISB15 = 0;   //STEP, PIN18
     _ANSB15 = 0;
+    
+   
     
     _TRISB9 = 0;    //LOADER TOP, PIN13
     _TRISA6 = 0;    //SHOOTER, PIN14
@@ -345,7 +348,7 @@ int loading_timer(unsigned long waitTime)
 float analog_ultra_inches() //Returns average of last ten distance readings...
 {  
 	static float ultraVolts;
-	ultraVolts = (ADC1BUF2/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
+	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
     
     for(i=0; i <10; i++)	//For 0-9 (all 10)
 	{
@@ -396,8 +399,13 @@ void timing_interrupt_config()
 
 
 
+
+
+
 float ir_front_percent()
 {
+    static float irFrontPercent[6] = {0,0,0,0,0,0};
+    
     
     //return values between 0-100 for percent of IR seen
     
@@ -407,8 +415,26 @@ float ir_front_percent()
     numLow = (4095)*(1.22/3.3);
     
     float percent;
-    percent = 100.0 * ((ADC1BUF0-numLow)/(4095.0-numLow));
-    return(percent);
+    percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
+    
+    //Update array values
+    for(i = 0; i < 5; i++ )
+    {
+        irFrontPercent[i] = irFrontPercent[i+1];
+    }
+    irFrontPercent[5] = percent;
+    
+    //Average the array
+    float sum = 0;
+    for(i = 0; i<=5; i++)
+    {
+        sum = sum + irFrontPercent[i];
+    }
+    
+    float averagePercent = sum/6.0;
+    
+    
+    return(averagePercent);
 }
 
 
@@ -423,8 +449,16 @@ float ir_back_percent()
     numLow = (4095)*(1.22/3.3);
     
     float percent;
-    percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
+    percent = 100.0 * ((ADC1BUF2-numLow)/(4095.0-numLow));
     return(percent);
+}
+
+
+void analog_update()
+{
+    ir_front_percent();
+    ir_back_percent();
+    analog_ultra_inches();
 }
 
 
