@@ -29,6 +29,8 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 
 #define DIST_TOL 0.25
 
+#define DIST_MULT 1.01
+
 #define LARGE_STEP_LENGTH 0.50
 #define STANDARD_STEP_LENGTH 0.25
 
@@ -52,7 +54,9 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 
 #define INCHES_CORNER_TO_CENTER 33.3
 
-#define IR_FOUND_THRESH 70  //Percent of full voltage
+#define IR_FOUND_THRESH 70.0  //Percent of full voltage
+#define LOADER_FOUND_THRESH 10.0
+
 
 #define INCH_PER_MIRCOSECONDS .00676
 
@@ -414,7 +418,7 @@ float ir_front_percent()
     
     float percent;
    // percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
-    percent = .156*ADC1BUF1-56.25;
+    percent = .1188*ADC1BUF1-106.06;
     
     //Update array values
     for(i = 0; i < 5; i++ )
@@ -451,7 +455,7 @@ float ir_back_percent()
     
     float percent;
    // percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
-    percent = 2.0*ADC1BUF2-120.0;
+    percent = 0.6211*ADC1BUF2-23.602;
     
     //Update array values
     for(i = 0; i < 5; i++ )
@@ -476,9 +480,13 @@ float ir_back_percent()
 
 void analog_update()
 {
-    ir_front_percent();
-    ir_back_percent();
-    analog_ultra_inches();
+    for(i = 0; i < 10; i++)
+    {
+        ir_front_percent();
+        ir_back_percent();
+        analog_ultra_inches();
+        delay(10);
+    }
 }
 
 
@@ -606,6 +614,7 @@ int find_normal()
 	switch(state)
 	{
 		case 0:	//Take initial reading...
+            analog_update();
 			dist1 = analog_ultra_inches();	//only make reading once...
 			state = 1;
 			break;
@@ -613,10 +622,11 @@ int find_normal()
 		case 1:	//Turn... then Measure & Determine Direction...
 			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
 			{
-				//dist2 = read_dist_simple();
+                analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                
                 dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
 				
-				if(dist2 >= dist1)	//turned wrong direction
+				if(dist2 >= dist1*DIST_MULT)	//turned wrong direction
 				{
 					dirFlag = 1;	//CCW rotation
 				}
@@ -635,9 +645,10 @@ int find_normal()
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
 				{
-					//dist2 = read_dist_simple();
+					analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                    
                     dist2 = analog_ultra_inches();	//take a new measurement
-					if(dist2 >= dist1)	//we're getting farther again...
+					if(dist2 >= dist1*DIST_MULT)	//we're getting farther again...
 					{
 						state = 3;	//normal, move on...
 					}
@@ -656,9 +667,10 @@ int find_normal()
 			{
 				if(turn_degrees(STANDARD_STEP_ANGLE))
 				{
-					//dist2 = read_dist_simple();
+					analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                    
                     dist2 = analog_ultra_inches();
-					if(dist2 >= dist1)	//we're getting farther again...
+					if(dist2 >= dist1*DIST_MULT)	//we're getting farther again...
 					{
 						state = 3;	//normal, move on...
 					}
@@ -711,6 +723,8 @@ int find_corner()
 	switch(state)
 	{
 		case 0:	//Take initial reading...
+            analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+            
 			dist1 = analog_ultra_inches();	//only make reading once...
 			state = 1;
 			break;
@@ -718,10 +732,11 @@ int find_corner()
 		case 1:	//Turn... then Measure & Determine Direction...
 			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
 			{
-				//dist2 = read_dist_simple();
+				analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                
                 dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
 				
-				if(dist2 <= dist1)	//turned wrong direction
+				if(dist2 <= dist1/DIST_MULT)	//turned wrong direction
 				{
 					dirFlag = 1;	//CCW rotation
 				}
@@ -740,9 +755,10 @@ int find_corner()
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
 				{
-					//dist2 = read_dist_simple();
+					analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                    
                     dist2 = analog_ultra_inches();	//take a new measurement
-					if(dist2 <= dist1)	//we're closer again...
+					if(dist2 <= dist1/DIST_MULT)	//we're closer again...
 					{
 						state = 3;	//corner, move on...
 					}
@@ -761,7 +777,8 @@ int find_corner()
 			{
 				if(turn_degrees(STANDARD_STEP_ANGLE))
 				{
-					//dist2 = read_dist_simple();
+					analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                    
                     dist2 = analog_ultra_inches();
 					if(dist2 <= dist1)	//we're getting closer again...
 					{
@@ -808,7 +825,9 @@ int find_corner()
 int find_inches(float reference)
 {
 	float error;
-		
+	
+    analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+    
 	error = (reference -  analog_ultra_inches());	//Error = (24 - Dist)
 		
 	if(abs_f(error) < DIST_TOL)	//We are there...
@@ -836,7 +855,9 @@ int find_inches(float reference)
 int find_24()
 {
 	float error;
-		
+	
+    analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+    
 	error = (INCH_TO_WALL -  analog_ultra_inches());	//Error = (24 - Dist)
 		
 	if(abs_f(error) < DIST_TOL)	//We are there...
@@ -988,6 +1009,7 @@ int aquire_target()
     switch(state)
     {
         case(0):    //Default (straight ahead)
+            analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
             if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
             {
                 state = 0;  //reset the state for next time
@@ -1023,6 +1045,7 @@ int aquire_target()
         case(2):    //turn right and check
             if(turn_degrees(90))    //We've turned right...
             {
+                analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                 if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
                 {
                     state = 0;  //reset the state for next time
@@ -1064,6 +1087,7 @@ int aquire_target()
         case(4):    //turn left (90 CCW) and check
             if(turn_degrees(-90))    //We've turned left...
             {
+                analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                 if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
                 {
                     state = 0;  //reset the state for next time
@@ -1086,6 +1110,7 @@ int aquire_target()
         case(5):    //turn 180 CCW and check
             if(turn_degrees(-180))    //We've turned left...
             {
+                analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                 if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
                 {
                     state = 0;  //reset the state for next time
@@ -1107,6 +1132,7 @@ int aquire_target()
         case(7):    //We're stuck, we didn't find the target...
             if(turn_degrees(90))
             {
+                analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                 if(ir_front_percent() >= IR_FOUND_THRESH)    //This is the target...
                 {
                     state = 0;

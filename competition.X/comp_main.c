@@ -21,9 +21,6 @@ int main()
 {
     pin_config_init();
     timing_interrupt_config();
-	//ultrasonic_setup();
-//    analog_ultrasonic_setup();      TO DO: Remove/change these two.
-//	ir_finder_analog_setup();
    
     //while(some_button_is_not_pushed); //This will allow the system to pause until a start button is pushed before the 
     
@@ -84,13 +81,27 @@ int main()
 					case 0:	//Default, turn 45 degrees...
 						if(turn_degrees(45))
 						{
-							findLoaderState = 0;    //Change back to findLoaderState = 1;
-                            STATE = toLoader;   //Don't include
-							startTime = milliseconds;
-							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)//Pause and allow for the IR sensor to adjust
+							if(ir_front_percent() >= IR_FOUND_THRESH)   //front found reference corner
                             {
-                                //do nothing
+                                findLoaderState = 1;    //turn 90 and then back up
                             }
+                            else if(ir_front_percent() >= LOADER_FOUND_THRESH)
+                            {
+                                findLoaderState = 2;    //turn 180 and then back up
+                            }
+                            else if(ir_back_percent() >= IR_FOUND_THRESH)
+                            {
+                                findLoaderState = 3;    //turn -90 and then back up
+                            }
+                            else if(ir_back_percent() >= IR_FOUND_THRESH)
+                            {
+                                findLoaderState = 4;    //turn -90 and then back up
+                            }
+                            else
+                            {
+                                findLoaderState = 5;//turn 90 and check again...
+                            }
+                            
 						}
 						else
 						{
@@ -98,28 +109,52 @@ int main()
 						}
 						break;
 					case 1:	//Turn completed...
-						if((milliseconds - irTimeValues[0]) < ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0)	//The array of 5 values has been filled recently by interrupts (IR Beacon Found)
-						{
-							findLoaderState = 0; // Must be used in series with findCenter
-							STATE = toLoader;
-						}
-						else
-						{
-							findLoaderState = 2;
-						}
+						if(turn_degrees(90))
+                        {
+                            findLoaderState = 6;    //Back up
+                        }
+                        else
+                        {
+                            //do nothing
+                        }
 						break;
 					case 2: //IR Not found, continue turning...
-						if(turn_degrees(90))
-						{
-							findLoaderState = 1;
-							startTime = milliseconds;
-							while((milliseconds - startTime) <= ((5.0 + 2.0)/LOADING_IR_FREQ)*1000.0);	//Pause and allow for the IR sensor to adjust
-						}
-						else
-						{
-							//do nothing
-						}
+						if(turn_degrees(180))
+                        {
+                            findLoaderState = 6;    //Back up
+                        }
+                        else
+                        {
+                            //do nothing
+                        }
 						break;
+                    case 3: //IR Not found, continue turning...
+						if(turn_degrees(-90))
+                        {
+                            findLoaderState = 6;    //Back up
+                        }
+                        else
+                        {
+                            //do nothing
+                        }
+						break;
+                    case 4: //IR Not found, continue turning...
+						if(turn_degrees(180))
+                        {
+                            findLoaderState = 6;    //Back up
+                        }
+                        else
+                        {
+                            //do nothing
+                        }
+						break;
+                    case 5:
+                    
+                        //turn 90 and check
+                        break;
+                    case 6:
+                            findLoaderState = 0;
+                            STATE = toLoader;
 				}
 				break;
 				
@@ -127,8 +162,11 @@ int main()
 				switch(toLoaderState)
 				{
 					case 0:
-						if(go_straight_inches(-1*INCHES_CORNER_TO_CENTER)) 			// Are we going to use control here? E.i. re-center on IR - David
-							STATE = loading;
+                        if(stage_timer() != 4 || stage_timer() != 5)
+                        {
+                            if(go_straight_inches(-1*INCHES_CORNER_TO_CENTER)) 			// Are we going to use control here? E.i. re-center on IR - David
+                                STATE = loading;
+                        }
 						break;
 				}
 				break;
@@ -137,7 +175,7 @@ int main()
 				//this still needs to have the details worked out...
 				//If loaded with 6, STATE = toShooting, Break
 				//Else, do nothing (wait for loading)
-				if(loading_timer(3.0))
+				if(loading_timer(6.0))
                 {
                     STATE = toShooting;
                 }
@@ -215,6 +253,7 @@ int main()
 					if(shoot(7))    //Six shots plus one load complete
 					{               
 						STATE = toLoader;
+                        //TODO: turn to face away from loader...
 					}
 					else
 					{

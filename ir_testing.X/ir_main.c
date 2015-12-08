@@ -25,6 +25,8 @@ int main()
     
     while(1)
     {
+        int x = 1;
+        analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
         float percent_front = ir_front_percent();
         float percent_back = ir_back_percent();
         

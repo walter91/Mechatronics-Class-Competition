@@ -27,8 +27,7 @@ int main()
     //_TRISA0 = 1;
     //_TRISA1 = 1;
     while(1)
-    {
-        
+    {        
         //OC1R = ((read_dist_simple()/148.0)/48.0)*PR2;    //Should output PWM with duty cycle from 0%-100% for 0"-48"
         
         switch(STATE)
