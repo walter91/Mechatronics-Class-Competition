@@ -26,10 +26,10 @@ int main()
     while(1)
     {
         int x = 1;
-<<<<<<< HEAD
-        analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
-=======
->>>>>>> origin/master
+//<<<<<<< HEAD
+//        analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+//=======
+//>>>>>>> origin/master
         float percent_front = ir_front_percent();
         float percent_back = ir_back_percent();
         

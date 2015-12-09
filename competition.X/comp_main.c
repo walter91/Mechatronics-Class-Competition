@@ -14,8 +14,8 @@ int shottingState = 0;
 #include "board.h" //set up pin names, hold all additional functions
 
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
-state STATE = findCenter;	//Default state initialization
-
+//state STATE = findCenter;	//Default state initialization
+state STATE = findLoader; //Testing purposes
 
 int main()
 {
@@ -83,20 +83,20 @@ int main()
 						{
 							if(ir_front_percent() >= IR_FOUND_THRESH)   //front found reference corner
                             {
-                                findLoaderState = 1;    //turn 90 and then back up
+                                findLoaderState = 1;    //turn -90 and then back up
                             }
                             else if(ir_front_percent() >= LOADER_FOUND_THRESH)
                             {
                                 findLoaderState = 2;    //turn 180 and then back up
                             }
-                            else if(ir_back_percent() >= IR_FOUND_THRESH)
-                            {
-                                findLoaderState = 3;    //turn -90 and then back up
-                            }
-                            else if(ir_back_percent() >= IR_FOUND_THRESH)
-                            {
-                                findLoaderState = 4;    //turn -90 and then back up
-                            }
+//                            else if(ir_back_percent() >= IR_FOUND_THRESH)
+//                            {
+//                                findLoaderState = 3;    //turn 90 and then back up
+//                            }
+//                            else if(ir_back_percent() >= IR_FOUND_THRESH)
+//                            {
+//                                findLoaderState = 4;    //turn -90 and then back up
+//                            }
                             else
                             {
                                 findLoaderState = 5;//turn 90 and check again...
@@ -109,7 +109,7 @@ int main()
 						}
 						break;
 					case 1:	//Turn completed...
-						if(turn_degrees(90))
+						if(turn_degrees(-90))
                         {
                             findLoaderState = 6;    //Back up
                         }
@@ -129,7 +129,7 @@ int main()
                         }
 						break;
                     case 3: //IR Not found, continue turning...
-						if(turn_degrees(-90))
+						if(turn_degrees(90))
                         {
                             findLoaderState = 6;    //Back up
                         }
@@ -149,7 +149,11 @@ int main()
                         }
 						break;
                     case 5:
-                    
+                        if(turn_degrees(45))
+                        {
+                            findLoaderState = 0;
+                        }
+                                         
                         //turn 90 and check
                         break;
                     case 6:

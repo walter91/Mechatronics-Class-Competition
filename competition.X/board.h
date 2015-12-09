@@ -22,7 +22,7 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 #define LEFT_BACKWARD 1
 #define RIGHT_BACKWARD 0
 
-#define STEP_DELAY 5 // Is this value arbitrary... but it works well
+#define STEP_DELAY 3 // Is this value arbitrary... but it works well
 
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
@@ -41,21 +41,21 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 //Half Step mode
 #define stepsPerRev 400.0 //Number of steps required for one rev of motor
 #define wheelCircumferenceInches 12.7172 //4.048*3.14	//Drive wheel circumference in inches
-#define stepsPerInch  15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
-#define stepsPerDegree 0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
+#define stepsPerInch  31.2726 //15.6363 // Calibrated //31.4534 //15.7267 //(stepsPerRev/wheelCircumferenceInches)	//Number of pulses required to move forward 1 inch (pulses/revolution)*(revolutions/inch)
+#define stepsPerDegree 1.6911 //0.84553 //calibrated //.836 //1.672 // stepsperInch*0.0266*2 //was 10.055
 
-#define LOAD_TIME 200    //Seconds for a PPball to fall past the gate...
-#define SHOOT_TIME 200   //Seconds for a PPball to be shot...
+#define LOAD_TIME 150    //Seconds for a PPball to fall past the gate...
+#define SHOOT_TIME 100   //Seconds for a PPball to be shot...
 
 #define INCH_PER_VOLT 20.825    //Calibrated (11-24-15)
 #define INCH_OFFSET 0.915   //Calibrated (11-24-15)
 
 #define LOADING_IR_FREQ 100
 
-#define INCHES_CORNER_TO_CENTER 33.3
+#define INCHES_CORNER_TO_CENTER 30.5
 
-#define IR_FOUND_THRESH 70.0  //Percent of full voltage
-#define LOADER_FOUND_THRESH 10.0
+#define IR_FOUND_THRESH 65.0  //Percent of full voltage
+#define LOADER_FOUND_THRESH 35.0
 
 
 #define INCH_PER_MIRCOSECONDS .00676
@@ -411,21 +411,22 @@ float ir_front_percent()
         
     //return values between 0-100 for percent of IR seen
     
-    static float voltageLow = 0.3;
+    static float voltageLow = 0.73;
           
     float numLow;
-    numLow = (4095)*(1.22/3.3);
+    numLow = (4095)*(voltageLow/3.3);
     
     float percent;
-   // percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
-    percent = .1188*ADC1BUF1-106.06;
+    percent = 100.0 * (3*(ADC1BUF1-numLow)/(4095.0-numLow));
+    //percent = .1188*ADC1BUF1-146.06;
     
     //Update array values
-    for(i = 0; i < 5; i++ )
+    for(i = 0; i < 6; i++ )
     {
-        irFrontPercent[i] = irFrontPercent[i+1];
+        //irFrontPercent[i] = irFrontPercent[i+1];
+        irFrontPercent[i] = 100.0 * (3*(ADC1BUF1-numLow)/(4095.0-numLow));
     }
-    irFrontPercent[5] = percent;
+    //irFrontPercent[5] = percent;
     
     //Average the array
     float sum = 0;
@@ -448,14 +449,14 @@ float ir_back_percent()
         
     //return values between 0-100 for percent of IR seen
     
-    static float voltageLow = 0.3;
+    static float voltageLow = 0.15;
           
     float numLow;
     numLow = (4095)*(1.22/3.3);
     
     float percent;
-   // percent = 100.0 * ((ADC1BUF1-numLow)/(4095.0-numLow));
-    percent = 0.6211*ADC1BUF2-23.602;
+    percent = 100.0 * (4 * (ADC1BUF2-numLow)/(4095.0-numLow));
+    //percent = 0.6211*ADC1BUF2-23.602;
     
     //Update array values
     for(i = 0; i < 5; i++ )
