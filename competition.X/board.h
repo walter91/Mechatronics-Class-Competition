@@ -31,8 +31,8 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 
 #define DIST_MULT 1.01
 
-#define LARGE_STEP_LENGTH 0.50
-#define STANDARD_STEP_LENGTH 0.25
+#define LARGE_STEP_LENGTH 1.50
+#define STANDARD_STEP_LENGTH 0.5
 
 #define LARGE_STEP_ANGLE 10.0
 #define STANDARD_STEP_ANGLE 5.0
@@ -84,7 +84,7 @@ int ultraLastStateF;
 int targetsFound = 0b000;
 
 float ultraVoltsInt[10] = {0,0,0,0,0,0,0,0,0,0};	//Interrupt driven Analog Ultrasonic Values
-float ultraInchesAvg[10] = {0,0,0,0,0,0,0,0,0,0};
+float ultraInchesAvg[50] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 int loaderIrState;
 #define IR_TIMES 3
@@ -354,26 +354,29 @@ int loading_timer(unsigned long waitTime)
 float analog_ultra_inches() //Returns average of last ten distance readings...
 {  
 	static float ultraVolts;
-	ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
+	//ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
     
-    for(i=0; i <10; i++)	//For 0-9 (all 10)
+    for(i=0; i <50; i++)	//For 0-9 (all 10)
 	{
-		ultraInchesAvg[i] = ultraInchesAvg[i+1];    //Shift the inch values...
+        ultraVolts = (ADC1BUF0/4095.0)*3.3;	//Read analog-to-digital converter and save in volts
+        ultraInchesAvg[i] = ultraVolts*INCH_PER_VOLT + INCH_OFFSET;
+        delay(2);
+		//ultraInchesAvg[i] = ultraInchesAvg[i+1];    //Shift the inch values...
 	}
     
 	//static float inches;
-	ultraInchesAvg[10] = ultraVolts*INCH_PER_VOLT + INCH_OFFSET;    //Update the final value in the array
+	//ultraInchesAvg[10] = ultraVolts*INCH_PER_VOLT + INCH_OFFSET;    //Update the final value in the array
     
     static float sum;
 	sum = 0;
 	
-	for(i=0; i <=10; i++)	//For 0-9 (all 10)
+	for(i=0; i <50; i++)	//For 0-9 (all 10)
 	{
 		sum = sum + ultraInchesAvg[i];
 	}
     
     static float averageInches;
-    averageInches = sum/10.0;
+    averageInches = sum/50.0;
 	
     return(averageInches);
 }
@@ -619,7 +622,7 @@ int find_normal()
 	switch(state)
 	{
 		case 0:	//Take initial reading...
-            analog_update();
+            //analog_update();
 			dist1 = analog_ultra_inches();	//only make reading once...
 			state = 1;
 			break;
@@ -627,17 +630,19 @@ int find_normal()
 		case 1:	//Turn... then Measure & Determine Direction...
 			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
 			{
-                analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                //analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                 
                 dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
 				
-				if(dist2 >= dist1*DIST_MULT)	//turned wrong direction
+				if(dist2 >= dist1 + .25)	//turned wrong direction
 				{
 					dirFlag = 1;	//CCW rotation
+                    delay(2000);
 				}
 				else
 				{
 					dirFlag = 0;	//CW rotation
+                    delay(5000);
 				}
 				dist1 = dist2;	//update dist1
 				
@@ -650,12 +655,13 @@ int find_normal()
 			{
 				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
 				{
-					analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+					//analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                     
                     dist2 = analog_ultra_inches();	//take a new measurement
-					if(dist2 >= dist1*DIST_MULT)	//we're getting farther again...
+					if(dist2 >= dist1 + .25)	//we're getting farther again...
 					{
 						state = 3;	//normal, move on...
+                        delay(2000);
 					}
 					else
 					{
@@ -672,10 +678,10 @@ int find_normal()
 			{
 				if(turn_degrees(STANDARD_STEP_ANGLE))
 				{
-					analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+					//analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
                     
                     dist2 = analog_ultra_inches();
-					if(dist2 >= dist1*DIST_MULT)	//we're getting farther again...
+					if(dist2 >= dist1+ .25)	//we're getting farther again...
 					{
 						state = 3;	//normal, move on...
 					}
@@ -714,6 +720,120 @@ int find_normal()
 
 	return(returnFlag);		
 }
+
+
+
+int find_normal_new()
+{
+	static int state = 0;
+	static float dist1;
+	static float dist2;
+	static int dirFlag = 0;	//CW rotation initially...
+	int returnFlag = 0;
+		
+	switch(state)
+	{
+		case 0:	//Take initial reading...
+            //analog_update();
+			dist1 = analog_ultra_inches();	//only make reading once...
+			state = 1;
+			break;
+		
+		case 1:	//Turn... then Measure & Determine Direction...
+			if(turn_degrees(LARGE_STEP_ANGLE))	//turn 2 times as far the first time.
+			{
+                //analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                
+                dist2 = analog_ultra_inches();	//take reading once we've turned a full angle...
+				
+				if(dist2 >= dist1 + .25)	//turned wrong direction
+				{
+					dirFlag = 1;	//CCW rotation
+                    delay(2000);
+				}
+				else
+				{
+					dirFlag = 0;	//CW rotation
+                    delay(5000);
+				}
+				dist1 = dist2;	//update dist1
+				
+				state = 2;
+			}
+			break;
+		
+		case 2:	//Turn...then Measure & Determine if normal...
+			if(dirFlag == 1)	//CCW rotation, correct direction
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE))
+				{
+					//analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                    
+                    dist2 = analog_ultra_inches();	//take a new measurement
+					if(dist2 >= dist1 + .25)	//we're getting farther again...
+					{
+						state = 3;	//normal, move on...
+                        delay(2000);
+					}
+					else
+					{
+						state = 2;	//not normal, keep turning
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			else if(dirFlag == 0)	//CW rotation, correct direction
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE))
+				{
+					//analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+                    
+                    dist2 = analog_ultra_inches();
+					if(dist2 >= dist1+ .25)	//we're getting farther again...
+					{
+						state = 3;	//normal, move on...
+					}
+					else
+					{
+						state = 2;	//not normal, keep turning
+					}
+					dist1 = dist2;	//update dist1
+				}
+				else
+				{
+					//do nothing, still turning...
+				}
+			}
+			break;
+		
+		case 3:	//Turn back to estimated "more" normal...
+			if(dirFlag == 1)	//Turn back CW (previously rotated CCW)
+			{
+				if(turn_degrees(STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
+				{
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
+				}
+			}
+			else if(dirFlag == 0)	//Turn back CCW (previously rotated CW)
+			{
+				if(turn_degrees(-1*STANDARD_STEP_ANGLE*(dist2/(dist1+dist2))))	//finished turning back... turn back an angle proportional to distances...
+				{
+					state = 0;	//reset state
+					returnFlag = 1;	//prepare to confirm normal
+				}
+			}
+			break;
+	}
+
+	return(returnFlag);		
+}
+
+
 
 
 

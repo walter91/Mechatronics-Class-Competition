@@ -15,7 +15,7 @@ int shottingState = 0;
 
 typedef enum {findCenter, findLoader, toLoader, loading, toShooting, findTarget, shooting, findLoader2, end} state;	//Initialize all states...
 //state STATE = findCenter;	//Default state initialization
-state STATE = findLoader; //Testing purposes
+state STATE = findCenter; //Testing purposes
 
 int main()
 {
