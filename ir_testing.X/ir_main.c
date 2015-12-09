@@ -8,6 +8,7 @@ _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 int main()
 {
     pin_config_init();
+    timing_interrupt_config();
    
     //ADC is configured in pin_config_int()
     

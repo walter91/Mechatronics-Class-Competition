@@ -54,8 +54,8 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 
 #define INCHES_CORNER_TO_CENTER 30.5
 
-#define IR_FOUND_THRESH 65.0  //Percent of full voltage
-#define LOADER_FOUND_THRESH 35.0
+#define IR_FOUND_THRESH 55.0  //Percent of full voltage
+#define LOADER_FOUND_THRESH 30.0
 
 
 #define INCH_PER_MIRCOSECONDS .00676
@@ -407,7 +407,7 @@ void timing_interrupt_config()
 
 float ir_front_percent()
 {
-    static float irFrontPercent[6] = {0,0,0,0,0,0};
+    static float irFrontPercent[10] = {0,0,0,0,0,0,0,0,0,0};
         
     //return values between 0-100 for percent of IR seen
     
@@ -417,25 +417,27 @@ float ir_front_percent()
     numLow = (4095)*(voltageLow/3.3);
     
     float percent;
-    percent = 100.0 * (3*(ADC1BUF1-numLow)/(4095.0-numLow));
-    //percent = .1188*ADC1BUF1-146.06;
+    //percent = 100.0 * (3*(ADC1BUF1-numLow)/(4095.0-numLow));
+    percent = .0833*ADC1BUF1-83.33;
     
     //Update array values
-    for(i = 0; i < 6; i++ )
+    for(i = 0; i < 10; i++ )
     {
         //irFrontPercent[i] = irFrontPercent[i+1];
-        irFrontPercent[i] = 100.0 * (3*(ADC1BUF1-numLow)/(4095.0-numLow));
+        //irFrontPercent[i] = 100.0 * (3*(ADC1BUF1-numLow)/(4095.0-numLow));
+        irFrontPercent[i] = .0833*ADC1BUF1-83.33;
+        delay(5);
     }
     //irFrontPercent[5] = percent;
     
     //Average the array
     float sum = 0;
-    for(i = 0; i<=5; i++)
+    for(i = 0; i<=9; i++)
     {
         sum = sum + irFrontPercent[i];
     }
     
-    float averagePercent = sum/6.0;
+    float averagePercent = sum/10.0;
     
     
     return(averagePercent);
@@ -455,13 +457,14 @@ float ir_back_percent()
     numLow = (4095)*(1.22/3.3);
     
     float percent;
-    percent = 100.0 * (4 * (ADC1BUF2-numLow)/(4095.0-numLow));
+    percent = 100.0 * (3 * (ADC1BUF2-numLow)/(4095.0-numLow));
     //percent = 0.6211*ADC1BUF2-23.602;
     
     //Update array values
     for(i = 0; i < 5; i++ )
     {
-        irFrontPercent[i] = irFrontPercent[i+1];
+        //irFrontPercent[i] = irFrontPercent[i+1];
+        irFrontPercent[i] = 100.0 * (3 * (ADC1BUF2-numLow)/(4095.0-numLow));
     }
     irFrontPercent[5] = percent;
     
