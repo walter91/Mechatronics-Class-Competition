@@ -447,7 +447,7 @@ float ir_front_percent()
 
 float ir_back_percent()
 {
-    static float irFrontPercent[6] = {0,0,0,0,0,0};
+    static float irBackPercent[10] = {0,0,0,0,0,0,0,0,0,0};
         
     //return values between 0-100 for percent of IR seen
     
@@ -464,18 +464,19 @@ float ir_back_percent()
     for(i = 0; i < 5; i++ )
     {
         //irFrontPercent[i] = irFrontPercent[i+1];
-        irFrontPercent[i] = 100.0 * (3 * (ADC1BUF2-numLow)/(4095.0-numLow));
+        //irFrontPercent[i] = 100.0 * (3 * (ADC1BUF2-numLow)/(4095.0-numLow));
+        irBackPercent[i] = .0269 * ADC1BUF2 - 4.8387;
     }
-    irFrontPercent[5] = percent;
+    //irFrontPercent[5] = percent;
     
     //Average the array
     float sum = 0;
     for(i = 0; i<=5; i++)
     {
-        sum = sum + irFrontPercent[i];
+        sum = sum + irBackPercent[i];
     }
     
-    float averagePercent = sum/6.0;
+    float averagePercent = sum/10.0;
     
     
     return(averagePercent);
@@ -489,7 +490,7 @@ void analog_update()
         ir_front_percent();
         ir_back_percent();
         analog_ultra_inches();
-        delay(10);
+        delay(5);
     }
 }
 
