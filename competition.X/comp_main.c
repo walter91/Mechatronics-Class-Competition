@@ -10,6 +10,7 @@ int toShootingState = 0;
 int findTargetState = 0;
 int shottingState = 0;
 
+float angle;
 
 #include "board.h" //set up pin names, hold all additional functions
 
@@ -29,50 +30,94 @@ int main()
 		switch(STATE)
 		{
             case findCenter:
-				switch(findCenterState)
-				{
-					case 0:
-						if(find_normal())   //First normal found
-						{
-							findCenterState = 1;
-						}
-						else    //Keep looking
-						{
-							//do nothing
-						}
-						break;
-					case 1:
-						if(find_24())   //First 24" found
-						{
-							findCenterState = 2;
-						}
-						else    //Keep looking
-						{
-							//do nothing
-						}
-						break;
-					case 2:
-						if(turn_degrees(90))    //Turned 90 degrees
-						{
-							findCenterState = 3;
-						}
-						else
-						{
-							//do nothing
-						}
-						break;
-					case 3:
-						if(find_24())   //Second 24" found
-						{
-							findCenterState = 0;
-							STATE = findLoader;
-						}
-						else
-						{
-							//do nothing
-						}
-						break;
-				}
+                
+                 switch(findCenterState)
+                    {
+                     case 0:
+                        angle = find_normal_angle();
+                        findCenterState = 1;
+                        break;
+                    case 1:
+                        if(turn_degrees(angle))//if(find_normal_analog())
+                        {
+                            findCenterState = 2;
+                        }
+                        break;
+                    case 2:
+                       //delay(5000);
+                       findCenterState = 3;
+                       break;
+                    case 3:
+                       if(find_inches(24.0))
+                       {
+                           //delay(5000);
+                            findCenterState = 4;
+                       }
+                       break;
+                    case 4:
+                       if(turn_degrees(90))
+                       {
+                           //delay(5000);
+                            findCenterState = 5;
+                       }
+                       break;
+                    case 5:
+                       if(find_inches(24.0))
+                       {
+                           //delay(5000);
+                            findCenterState = 0;
+                            STATE = findLoader;
+                       }
+                       break;
+                    case 6:
+                       //do nothing...
+                       break;
+                    }
+                
+//				switch(findCenterState)
+//				{
+//					case 0:
+//						if(find_normal())   //First normal found
+//						{
+//							findCenterState = 1;
+//						}
+//						else    //Keep looking
+//						{
+//							//do nothing
+//						}
+//						break;
+//					case 1:
+//						if(find_24())   //First 24" found
+//						{
+//							findCenterState = 2;
+//						}
+//						else    //Keep looking
+//						{
+//							//do nothing
+//						}
+//						break;
+//					case 2:
+//						if(turn_degrees(90))    //Turned 90 degrees
+//						{
+//							findCenterState = 3;
+//						}
+//						else
+//						{
+//							//do nothing
+//						}
+//						break;
+//					case 3:
+//						if(find_24())   //Second 24" found
+//						{
+//							findCenterState = 0;
+//							STATE = findLoader;
+//						}
+//						else
+//						{
+//							//do nothing
+//						}
+//						break;
+//				}
 				break;
             
 			case findLoader:
@@ -162,7 +207,7 @@ int main()
 				}
 				break;
 				
-			case toLoader: 								// At this point, is it already pointing backwards to the loader? - David
+			case toLoader: 	// At this point, is it already pointing backwards to the loader? - David
 				switch(toLoaderState)
 				{
 					case 0:
@@ -256,8 +301,7 @@ int main()
 				{
 					if(shoot(7))    //Six shots plus one load complete
 					{               
-						STATE = toLoader;
-                        //TODO: turn to face away from loader...
+						STATE = findLoader2;
 					}
 					else
 					{
@@ -280,7 +324,10 @@ int main()
 				break;
 			
             case findLoader2:
-                //TO DO: Turn back to face loader depending on which target you shot at... 
+                if(turn_degrees(-1*currentDegrees))
+                {
+                    STATE = toLoader;
+                }
                 break;
                 
                 

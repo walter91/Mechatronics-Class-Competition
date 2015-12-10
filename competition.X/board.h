@@ -23,6 +23,7 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 #define RIGHT_BACKWARD 0
 
 #define STEP_DELAY 3 // Is this value arbitrary... but it works well
+#define STEP_DELAY_SLOW 10
 
 #define INCH_TO_WALL 24.0
 #define INCH_FROM_ULTRA_TO_CENTER 4.5
@@ -52,7 +53,7 @@ _FICD(ICS_PGx3);    //Debug Using programming module 3
 
 #define LOADING_IR_FREQ 100
 
-#define INCHES_CORNER_TO_CENTER 30.5
+#define INCHES_CORNER_TO_CENTER 20.0
 
 #define IR_FOUND_THRESH 55.0  //Percent of full voltage
 #define LOADER_FOUND_THRESH 30.0
@@ -82,6 +83,8 @@ int ultraLastStateB;
 int ultraLastStateF;
 
 int targetsFound = 0b000;
+
+int currentDegrees;
 
 float ultraVoltsInt[10] = {0,0,0,0,0,0,0,0,0,0};	//Interrupt driven Analog Ultrasonic Values
 float ultraInchesAvg[50] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -318,37 +321,6 @@ int shoot(int rounds)
 
 
 
-int loading_timer(unsigned long waitTime)
-{
-	static int state = 0;
-	static int returnFlag = 0;
-    static unsigned long startWaitTime = 0;
-	
-	switch(state)
-	{
-		case 0:
-			startWaitTime = milliseconds;
-			state = 1;
-			returnFlag = 0;
-			_LATB1 = 1;	//turn on loading sweeper, PIN1
-			break;
-		case 1:
-			if((milliseconds - startWaitTime) >= waitTime)	//Timer has expired
-			{
-				state = 0;
-				returnFlag = 1;
-				_LATB1 = 0;	//turn off loading sweeper, PIN1
-			}
-			else
-			{
-				//don't change state
-				returnFlag = 0;
-			}		
-			break;
-	}
-	return(returnFlag);
-}
-
 
 
 float analog_ultra_inches() //Returns average of last ten distance readings...
@@ -560,6 +532,60 @@ int go_straight_inches(float inches)
 
 
 
+
+int go_straight_inches_slow(float inches)
+{    
+    static float numberOfSteps;
+    static float stepsTaken = 0;
+    static unsigned long lastTime = 0;
+
+    numberOfSteps = (abs_f(inches)*stepsPerInch)*2.0;	//convert inches to number of steps
+
+    if(inches >= 0)
+    {
+        _RB7 = 0;  //set direction pins, both forward, DIR-R
+        _RB8 = 1;  //set direction pins, both forward, DIR-L
+    }
+
+    else
+    {
+        _RB7 = 1;  //set direction pins, both backward, DIR-R
+        _RB8 = 0;  //set direction pins, both backward, DIR-L
+    }
+
+    if(stepsTaken < numberOfSteps)  //Not enough steps yet...
+    {
+        if((milliseconds - lastTime) <= STEP_DELAY_SLOW)  //Not yet waited long enough
+        {
+            //do nothing YET...
+        }
+        else    //Its time to step...
+        {
+            if(_RB15)   //STEP
+            {
+                _RB15 = 0;  //STEP
+            }
+            else
+            {
+                _RB15 = 1;  //STEP
+            }
+            
+            lastTime = milliseconds;
+            stepsTaken++;
+        }
+        return(0);  //Need to continue
+    }
+    else    //We've taken enough steps
+    {
+        stepsTaken = 0; //Reset steps taken for next call
+        return(1);  //We're done...
+    }
+}
+
+
+
+
+
 int turn_degrees(float degrees)
 {
     //static float stepsPerDegree = 1.055; //Number of pulses required to spin 1 degrees
@@ -567,16 +593,19 @@ int turn_degrees(float degrees)
     numberOfSteps = (abs_f(degrees) * stepsPerDegree)*2; // This rounds to lower integer, right? - David
     static float stepsTaken = 0;
     static long lastTime = 0;
+    static float degreesPerStep;
 
     if(degrees >= 0)    //Turn CW
     {
         _RB7 = 1;  //set DIR-R backward
         _RB8 = 1;  //set DIR-L forward
+        degreesPerStep = 1.0/stepsPerDegree;
     }
     else
     {
         _RB7 = 0;  //set DIR-R forward
         _RB8 = 0;  //set DIR-L backward
+        degreesPerStep = -1.0/stepsPerDegree;
     }
 
     if(stepsTaken <= numberOfSteps)  //Not enough steps yet...
@@ -599,6 +628,7 @@ int turn_degrees(float degrees)
             
             lastTime = milliseconds;
             stepsTaken++;
+            currentDegrees = currentDegrees + degreesPerStep;
         }
         return(0);  //Need to continue
     }
@@ -609,6 +639,58 @@ int turn_degrees(float degrees)
     }
 }
 
+
+float find_normal_angle()
+    {
+    int i, j;
+
+    float distance[22] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    float distance_filtered[22] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    float derivative[22] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    
+    for(i=0; i<22; i++)		
+    {
+        distance[i] = analog_ultra_inches();	//record distances...
+        while(!turn_degrees(5.0));	//turn 5 degrees
+        delay(200);
+    }
+    
+    float alpha = .75;
+    for(i=1; i<22; i++)	//Filter the distances	
+    {
+        distance_filtered[i] = alpha*distance[i] + (1.0 - alpha)*distance[i-1];	//record distances...
+    }
+    distance_filtered[0] = distance_filtered[1];
+    //distances[] is now built
+
+    for(i=1; i<21; i++)
+    {
+        derivative[i] = (distance[i+1] - distance[i-1])/(2.0*5.0);	//Change is distance per degree, central difference
+    }
+
+    derivative[0] = (((distance[1] - distance[0])/10.0) + derivative[1])/2.0;	//Estimate the inital derivative
+    derivative[21] = (((distance[21] - distance[20])/10.0) + derivative[20])/2.0;
+
+    //derivative[] is now built
+    float derivMin;
+    float angleToMinDerive;
+    for(i=0; i<22; i++)
+    {
+        derivative[i] = abs_f(derivative[i]);
+        if(i==0)
+        {
+            derivMin = derivative[i];
+            angleToMinDerive = i*5.0;
+        }
+        else if((derivative[i]<derivMin))
+        {
+            derivMin = derivative[i];
+            angleToMinDerive = i*5.0;
+        }
+    }
+    
+    return(angleToMinDerive - 110.0);
+}
 
 
 int find_normal()
@@ -949,30 +1031,27 @@ int find_corner()
 
 int find_inches(float reference)
 {
-	float error;
-	
-    analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+	static float error;
+    static int returnFlag = 0;
+	static STATE = 0;
     
-	error = (reference -  analog_ultra_inches());	//Error = (24 - Dist)
-		
-	if(abs_f(error) < DIST_TOL)	//We are there...
-	{
-		return(1);	//Center Found
-	}
-	
-	else	//Change position...
-	{
-		if(error > 0)	//Positive error, move backward
-		{
-			go_straight_inches(-1*STANDARD_STEP_LENGTH); // If our DIST_TOL is 0.1 in, how can we reach it taking 0.5 in steps? Reduce to 0.1 in, maybe? - David
-		}
-		else	//Negative error, move forward
-		{
-			go_straight_inches(STANDARD_STEP_LENGTH);
-		}
-		
-		return(0);	//Keep looking for center
-	}
+    //analog_update();    //Take lots of analog readings to update the averages/Somewhat blocking...
+    switch(STATE)
+    {
+        case 0:
+            error = (reference -  analog_ultra_inches());
+            STATE = 1;
+            returnFlag = 0;
+            break;
+        case 1:
+            if(go_straight_inches(-1 * error))
+            {
+                STATE = 0;
+                returnFlag = 1;
+            }
+            break;
+    }
+		return(returnFlag);	//Keep looking for center
 }
 
 
@@ -1329,6 +1408,85 @@ void ir_finder_analog_setup()
     _ANSA1;         //Turn on analog for port A
     _TRISA0 = 1;    //Pin2 as Input
     _TRISA1 = 1;    //Pin3 as Input
+}
+
+
+
+int loading_timer(unsigned long waitTime)
+{
+	static int state = 0;
+	static int returnFlag = 0;
+    static unsigned long startWaitTime = 0;
+	
+	switch(state)
+	{
+		case 0:
+			if(go_straight_inches(1.0))
+            {
+                state = 1;
+                returnFlag = 0;
+            }
+			break;
+		case 1:
+			if(go_straight_inches(-1.0))
+            {
+                state = 2;
+            }
+			break;
+        case 2:
+			if(go_straight_inches(1.0))
+            {
+                state = 3;
+            }
+			break;
+        case 3:
+			if(go_straight_inches(-1.0))
+            {
+                state = 4;
+            }
+			break;
+		case 4:
+			if(go_straight_inches(1.0))
+            {
+                state = 5;
+            }
+			break;
+        case 5:
+			if(go_straight_inches(-1.0))
+            {
+                state = 6;
+            }
+			break;
+        case 6:
+			if(go_straight_inches(1.0))
+            {
+                state = 7;
+            }
+			break;
+		case 7:
+			if(go_straight_inches(-1.0))
+            {
+                state = 8;
+            }
+			break;
+        case 8:
+			if(go_straight_inches(1.0))
+            {
+                state = 9;
+            }
+			break;
+        case 9:
+			if(go_straight_inches(-1.0))
+            {
+                state = 10;
+            }
+			break;
+        case 10:
+			returnFlag = 1;
+            state = 0;
+			break;
+	}
+	return(returnFlag);
 }
 
 
