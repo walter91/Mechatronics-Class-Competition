@@ -3,7 +3,8 @@
 _FOSCSEL (FNOSC_FRCDIV);   //8mHz with Post-scaling
 
 
-#include "C:\Users\Walter\Documents\Walter\School\Fall 2015\Mechatronics\Mechatronics-Class-Competition\competition.X\board.h" //set up pin names, hold all additional functions
+//#include "C:\Users\Walter\Documents\Walter\School\Fall 2015\Mechatronics\Mechatronics-Class-Competition\competition.X\board.h" //set up pin names, hold all additional functions
+#include "C:\Users\David\Documents\GitHub\Mechatronics-Class-Competition\competition.X\board.h"
 
 int STATE = 2;
 unsigned long startTime = 0;
