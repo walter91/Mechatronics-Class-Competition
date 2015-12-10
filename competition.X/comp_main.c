@@ -31,93 +31,93 @@ int main()
 		{
             case findCenter:
                 
-                 switch(findCenterState)
-                    {
-                     case 0:
-                        angle = find_normal_angle();
-                        findCenterState = 1;
-                        break;
-                    case 1:
-                        if(turn_degrees(angle))//if(find_normal_analog())
-                        {
-                            findCenterState = 2;
-                        }
-                        break;
-                    case 2:
-                       //delay(5000);
-                       findCenterState = 3;
-                       break;
-                    case 3:
-                       if(find_inches(24.0))
-                       {
-                           //delay(5000);
-                            findCenterState = 4;
-                       }
-                       break;
-                    case 4:
-                       if(turn_degrees(90))
-                       {
-                           //delay(5000);
-                            findCenterState = 5;
-                       }
-                       break;
-                    case 5:
-                       if(find_inches(24.0))
-                       {
-                           //delay(5000);
-                            findCenterState = 0;
-                            STATE = findLoader;
-                       }
-                       break;
-                    case 6:
-                       //do nothing...
-                       break;
-                    }
+//                 switch(findCenterState)
+//                    {
+//                     case 0:
+//                        angle = find_normal_angle();
+//                        findCenterState = 1;
+//                        break;
+//                    case 1:
+//                        if(turn_degrees(angle))//if(find_normal_analog())
+//                        {
+//                            findCenterState = 2;
+//                        }
+//                        break;
+//                    case 2:
+//                       //delay(5000);
+//                       findCenterState = 3;
+//                       break;
+//                    case 3:
+//                       if(find_inches(24.0))
+//                       {
+//                           //delay(5000);
+//                            findCenterState = 4;
+//                       }
+//                       break;
+//                    case 4:
+//                       if(turn_degrees(90))
+//                       {
+//                           //delay(5000);
+//                            findCenterState = 5;
+//                       }
+//                       break;
+//                    case 5:
+//                       if(find_inches(24.0))
+//                       {
+//                           //delay(5000);
+//                            findCenterState = 0;
+//                            STATE = findLoader;
+//                       }
+//                       break;
+//                    case 6:
+//                       //do nothing...
+//                       break;
+//                    }
                 
-//				switch(findCenterState)
-//				{
-//					case 0:
-//						if(find_normal())   //First normal found
-//						{
-//							findCenterState = 1;
-//						}
-//						else    //Keep looking
-//						{
-//							//do nothing
-//						}
-//						break;
-//					case 1:
-//						if(find_24())   //First 24" found
-//						{
-//							findCenterState = 2;
-//						}
-//						else    //Keep looking
-//						{
-//							//do nothing
-//						}
-//						break;
-//					case 2:
-//						if(turn_degrees(90))    //Turned 90 degrees
-//						{
-//							findCenterState = 3;
-//						}
-//						else
-//						{
-//							//do nothing
-//						}
-//						break;
-//					case 3:
-//						if(find_24())   //Second 24" found
-//						{
-//							findCenterState = 0;
-//							STATE = findLoader;
-//						}
-//						else
-//						{
-//							//do nothing
-//						}
-//						break;
-//				}
+				switch(findCenterState)
+				{
+					case 0:
+						if(find_normal())   //First normal found
+						{
+							findCenterState = 1;
+						}
+						else    //Keep looking
+						{
+							//do nothing
+						}
+						break;
+					case 1:
+						if(find_24())   //First 24" found
+						{
+							findCenterState = 2;
+						}
+						else    //Keep looking
+						{
+							//do nothing
+						}
+						break;
+					case 2:
+						if(turn_degrees(90))    //Turned 90 degrees
+						{
+							findCenterState = 3;
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+					case 3:
+						if(find_24())   //Second 24" found
+						{
+							findCenterState = 0;
+							STATE = findLoader;
+						}
+						else
+						{
+							//do nothing
+						}
+						break;
+				}
 				break;
             
 			case findLoader:
